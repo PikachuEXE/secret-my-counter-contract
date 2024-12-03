@@ -1,0 +1,23 @@
+# Cargo+Git helper file (https://github.com/rust-lang/cargo/blob/0.44.1/src/cargo/sources/git/utils.rs#L320-L327)
+.cargo-ok
+
+# Text file backups
+**/*.rs.bk
+
+# macOS
+.DS_Store
+
+# IDEs
+*.iml
+.idea
+
+# Ignore node_modules and target directories at any level
+**/node_modules/
+**/target/
+
+# Ignore specific files at any level
+**/contract.wasm
+**/contract.wasm.gz
+**/cargo.lock
+**/.DS_Store
+**/.env
