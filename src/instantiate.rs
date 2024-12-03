@@ -12,7 +12,7 @@ pub fn perform_instantiate(
 
     let state = State {
         count: msg.count,
-        // count_increment_count: 0,
+        count_increment_count: 0,
     };
 
     let config = Config {

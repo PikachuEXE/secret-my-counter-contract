@@ -9,7 +9,7 @@ pub fn try_increment(deps: DepsMut, _env: Env, count: Option<i32>) -> StdResult<
     else {
         state.count += 1;
     }
-    // state.count_increment_count += 1;
+    state.count_increment_count += 1;
 
     STATE.save(deps.storage, &state)?;
 
@@ -49,7 +49,7 @@ mod tests {
             state,
             Ok(State {
                 count: 18,
-                // count_increment_count: 1,
+                count_increment_count: 1,
             })
         );
 
@@ -80,7 +80,7 @@ mod tests {
             state,
             Ok(State {
                 count: 20,
-                // count_increment_count: 1,
+                count_increment_count: 1,
             })
         );
 

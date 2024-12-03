@@ -24,49 +24,49 @@ pub struct OldState {
 pub static OLD_STATE: Item<OldState> = Item::new(b"state");
 
 fn migrate_state(deps: DepsMut, _env: Env) -> StdResult<Response> {
-    // let old_state = OLD_STATE.load(deps.storage)?;
-    // let new_state = State {
-    //     count: old_state.count,
-    //     count_increment_count: 0,
-    // };
-    // STATE.save(deps.storage, &new_state)?;
+    let old_state = OLD_STATE.load(deps.storage)?;
+    let new_state = State {
+        count: old_state.count,
+        count_increment_count: 0,
+    };
+    STATE.save(deps.storage, &new_state)?;
 
     Ok(Response::new()
         .add_attribute("action", "migrate")
         .add_attribute("status", "success"))
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use cosmwasm_std::{Coin, Uint128};
-//     use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env};
-//     use crate::state::State;
-//
-//     #[test]
-//     fn migrate_works() -> StdResult<()> {
-//         let mut deps = mock_dependencies_with_balance(&[Coin {
-//             denom: "token".to_string(),
-//             amount: Uint128::new(2),
-//         }]);
-//
-//         let old_state = OldState {
-//             count: 3,
-//         };
-//         OLDSTATE.save(deps.as_mut().storage, &old_state)?;
-//
-//         let _res = migrate_state(deps.as_mut(), mock_env())?;
-//
-//         // should reset count to provided value
-//         let state = STATE.load(deps.as_ref().storage);
-//         assert_eq!(
-//             state,
-//             Ok(State {
-//                 count: 3,
-//                 count_increment_count: 0,
-//             })
-//         );
-//
-//         Ok(())
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::{Coin, Uint128};
+    use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env};
+    use crate::state::State;
+
+    #[test]
+    fn migrate_works() -> StdResult<()> {
+        let mut deps = mock_dependencies_with_balance(&[Coin {
+            denom: "token".to_string(),
+            amount: Uint128::new(2),
+        }]);
+
+        let old_state = OldState {
+            count: 3,
+        };
+        OLD_STATE.save(deps.as_mut().storage, &old_state)?;
+
+        let _res = migrate_state(deps.as_mut(), mock_env())?;
+
+        // should reset count to provided value
+        let state = STATE.load(deps.as_ref().storage);
+        assert_eq!(
+            state,
+            Ok(State {
+                count: 3,
+                count_increment_count: 0,
+            })
+        );
+
+        Ok(())
+    }
+}

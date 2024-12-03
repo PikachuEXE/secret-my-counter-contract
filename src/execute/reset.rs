@@ -55,7 +55,7 @@ mod tests {
             state,
             Ok(State {
                 count: 6,
-                // count_increment_count: 0,
+                count_increment_count: 0,
             })
         );
         
@@ -93,7 +93,7 @@ mod tests {
             state,
             Ok(State {
                 count: 17,
-                // count_increment_count: 0,
+                count_increment_count: 0,
             })
         );
 
