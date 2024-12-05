@@ -16,19 +16,32 @@ pub fn perform_migration(
     }
 }
 
+struct MigrationEntry<'a> {
+    version: &'a str,
+    execute_fn: &'a dyn Fn(&mut DepsMut, Env) -> StdResult<Response>
+}
+
 fn migrate_state(mut deps: DepsMut, env: Env) -> StdResult<Response> {
     let mut schema_migration_versions = SCHEMA_MIGRATION_VERSIONS.load(deps.storage).unwrap_or(vec![]);
 
     let last_version = schema_migration_versions.last().cloned().unwrap_or("none".to_string());
     let mut versions_run = vec![];
-    run_migrate_with_version(
-        versions::V2024_12_05_001,
-        &migration_2024_12_05_001::execute,
-        &schema_migration_versions,
-        &mut versions_run,
-        &mut deps,
-        env,
-    )?;
+    let migration_entries: [MigrationEntry; 1] = [
+        MigrationEntry {
+            version: versions::V2024_12_05_001,
+            execute_fn: &migration_2024_12_05_001::execute,
+        },
+    ];
+    migration_entries.iter().for_each(|entry| {
+        run_migrate_with_version(
+            entry.version,
+            &entry.execute_fn,
+            &schema_migration_versions,
+            &mut versions_run,
+            &mut deps,
+            env.clone(),
+        ).unwrap();
+    });
     // endregion migrations
     schema_migration_versions.extend(&mut versions_run.iter().cloned());
     SCHEMA_MIGRATION_VERSIONS.save(deps.storage, &schema_migration_versions)?;
