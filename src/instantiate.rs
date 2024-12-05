@@ -1,6 +1,7 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult};
 use crate::msg::{InstantiateMsg};
 use crate::state::{Config, STATE, CONFIG, State};
+use crate::state::schema_migrations::{SCHEMA_MIGRATION_VERSIONS};
 
 pub fn perform_instantiate(
     deps: DepsMut,
@@ -13,14 +14,19 @@ pub fn perform_instantiate(
     let state = State {
         count: msg.count,
         count_increment_count: 0,
+        count_reset_count: 0,
     };
 
     let config = Config {
         contract_manager: contract_manager_addr,
     };
 
+    // Add run migration versions later
+    let schema_migrations = crate::migrate::versions::ALL_VERSIONS.iter().map(|s| s.to_string()).collect();
+
     STATE.save(deps.storage, &state)?;
     CONFIG.save(deps.storage, &config)?;
+    SCHEMA_MIGRATION_VERSIONS.save(deps.storage, &schema_migrations)?;
 
     Ok(Response::default())
 }
@@ -62,6 +68,12 @@ mod tests {
             Ok(Config {
                 contract_manager: contract_manager_addr,
             })
+        );
+
+        let schema_migrations = SCHEMA_MIGRATION_VERSIONS.load(deps.as_ref().storage);
+        assert_eq!(
+            schema_migrations,
+            Ok(crate::migrate::versions::ALL_VERSIONS.iter().map(|s| s.to_string()).collect()),
         );
 
         Ok(())

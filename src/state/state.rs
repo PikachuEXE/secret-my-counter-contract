@@ -7,6 +7,7 @@ use secret_toolkit::storage::{Item};
 pub struct State {
     pub count: i32,
     pub count_increment_count: i32,
+    pub count_reset_count: i32,
 }
 
 pub static STATE: Item<State> = Item::new(b"state");

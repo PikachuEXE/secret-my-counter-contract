@@ -50,6 +50,7 @@ mod tests {
             Ok(State {
                 count: 18,
                 count_increment_count: 1,
+                count_reset_count: 0,
             })
         );
 
@@ -81,6 +82,7 @@ mod tests {
             Ok(State {
                 count: 20,
                 count_increment_count: 1,
+                count_reset_count: 0,
             })
         );
 

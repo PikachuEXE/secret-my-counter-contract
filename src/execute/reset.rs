@@ -9,6 +9,7 @@ pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Resp
     }
     let mut state = STATE.load(deps.storage)?;
     state.count = count;
+    state.count_reset_count += 1;
 
     STATE.save(deps.storage, &state)?;
 
@@ -56,9 +57,10 @@ mod tests {
             Ok(State {
                 count: 6,
                 count_increment_count: 0,
+                count_reset_count: 1,
             })
         );
-        
+
         Ok(())
     }
 
@@ -94,6 +96,7 @@ mod tests {
             Ok(State {
                 count: 17,
                 count_increment_count: 0,
+                count_reset_count: 0,
             })
         );
 
