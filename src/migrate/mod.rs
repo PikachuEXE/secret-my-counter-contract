@@ -1,7 +1,7 @@
 use crate::msg::MigrateMsg;
 use cosmwasm_std::{DepsMut, Env, Response, StdResult};
 
-mod migration_2024_12_03_001;
+// mod migration_2024_12_03_001;
 
 pub fn perform_migration(
     deps: DepsMut,
@@ -14,7 +14,7 @@ pub fn perform_migration(
 }
 
 fn migrate_state(deps: DepsMut, env: Env) -> StdResult<Response> {
-    migration_2024_12_03_001::migrate_state(deps, env)?;
+    // migration_2024_12_03_001::migrate_state(deps, env)?;
 
     Ok(Response::new()
         .add_attribute("action", "migrate")
