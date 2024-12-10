@@ -11,7 +11,7 @@ pub fn execute_dispatch(
     msg: ExecuteMsg
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::Increment { count } => increment::try_increment(deps, env, count),
+        ExecuteMsg::Increment { count } => increment::try_increment(deps, env, info, count),
         ExecuteMsg::Reset { count } => reset::try_reset(deps, info, count)
     }
 }
