@@ -38,8 +38,13 @@ mod tests {
                 amount: Uint128::new(2),
             }],
         );
-        let init_msg = InstantiateMsg { count: 17, contract_manager: "owner".to_string() };
+        let init_msg = InstantiateMsg { count: 0, contract_manager: "owner".to_string() };
         let _res = crate::instantiate(deps.as_mut(), mock_env(), info, init_msg)?;
+        assert!(STATE.save(deps.as_mut().storage, &State {
+            count: 17,
+            count_increment_count: 17,
+            count_reset_count: 0,
+        }).is_ok());
 
         let info = mock_info(
             "owner",
@@ -56,7 +61,7 @@ mod tests {
             state,
             Ok(State {
                 count: 6,
-                count_increment_count: 0,
+                count_increment_count: 17,
                 count_reset_count: 1,
             })
         );
