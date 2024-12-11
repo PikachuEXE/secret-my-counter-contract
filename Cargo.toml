@@ -33,12 +33,15 @@ thiserror = { version = "2.0.3" }
 cosmwasm-schema = "2.1.4"
 
 # Uncomment these for some common extra tools
-secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.10.1", default-features = false, features = ["storage", "permit", "utils"] }
+secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.10.1", default-features = false, features = ["storage", "permit", "utils", "crypto"] }
 # cw-storage-plus = { version = "1.0.1", default-features = false }
 
 # [patch.crates-io]
 # uncomment this if you use cw-storage-plus
 # cosmwasm-std = { git = "https://github.com/scrtlabs/cosmwasm", tag = "v1.1.9-secret" }
+
+[dev-dependencies]
+rand = { version = "0.8" }
 
 [[bin]]
 name = "schema"

@@ -5,7 +5,7 @@ use crate::state::schema_migrations::{SCHEMA_MIGRATION_VERSIONS};
 
 pub fn perform_instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
@@ -19,6 +19,7 @@ pub fn perform_instantiate(
 
     let config = Config {
         contract_manager: contract_manager_addr,
+        contract_address: env.contract.address,
     };
 
     // Add run migration versions later
@@ -67,6 +68,7 @@ mod tests {
             config,
             Ok(Config {
                 contract_manager: contract_manager_addr,
+                contract_address: Addr::unchecked(MOCK_CONTRACT_ADDR),
             })
         );
 
