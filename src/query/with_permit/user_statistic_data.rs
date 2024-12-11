@@ -1,15 +1,15 @@
 use cosmwasm_std::{Addr, Deps, StdResult};
 use secret_toolkit::serialization::Json;
 use secret_toolkit::storage::Keymap;
-use crate::msg::UserStatisticDataResponse;
+use crate::msg::QueryAnswer;
 use crate::state::user_statistic_data::{UserStatisticData, USER_STATISTIC_DATA_STORE};
 
 pub static ACTION_TOKEN_NAME_4_PERMISSION: &'static str = "user_statistic_data";
 
-pub fn query_user_statistic_data(deps: Deps, viewer: String, custom_store: Option<&Keymap<Addr, UserStatisticData, Json>>) -> StdResult<UserStatisticDataResponse> {
+pub fn query_user_statistic_data(deps: Deps, viewer: String, custom_store: Option<&Keymap<Addr, UserStatisticData, Json>>) -> StdResult<QueryAnswer> {
     let store = custom_store.unwrap_or_else(|| &USER_STATISTIC_DATA_STORE);
     let state = store.get(deps.storage, &deps.api.addr_validate(viewer.as_str())?).unwrap_or_default();
-    Ok(UserStatisticDataResponse {
+    Ok(QueryAnswer::UserStatisticData {
         count_increment_count: state.count_increment_count,
     })
 }
@@ -35,7 +35,7 @@ mod tests {
         assert!(store.insert(deps.as_mut().storage, &Addr::unchecked(key), &UserStatisticData { count_increment_count: 1 }).is_ok());
         assert_eq!(store.get(deps.as_ref().storage, &Addr::unchecked(key)), Some(UserStatisticData { count_increment_count: 1 }));
         // actual query
-        assert_eq!(query_user_statistic_data(deps.as_ref(), key.to_string(), Some(&store))?, UserStatisticDataResponse { count_increment_count: 1 });
+        assert_eq!(query_user_statistic_data(deps.as_ref(), key.to_string(), Some(&store))?, QueryAnswer::UserStatisticData { count_increment_count: 1 });
 
         Ok(())
     }

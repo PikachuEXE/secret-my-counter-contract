@@ -44,6 +44,7 @@ pub enum QueryMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryWithPermit {
     UserStatisticData {},
+    GlobalStatisticData {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
