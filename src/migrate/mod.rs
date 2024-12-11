@@ -5,6 +5,7 @@ use crate::state::schema_migrations::SCHEMA_MIGRATION_VERSIONS;
 
 pub mod versions;
 mod migration_2024_12_05_001;
+mod migration_2024_12_10_001;
 
 pub fn perform_migration(
     deps: DepsMut,
@@ -26,10 +27,14 @@ fn migrate_state(mut deps: DepsMut, env: Env) -> StdResult<Response> {
 
     let last_version = schema_migration_versions.last().cloned().unwrap_or("none".to_string());
     let mut versions_run = vec![];
-    let migration_entries: [MigrationEntry; 1] = [
+    let migration_entries: [MigrationEntry; 2] = [
         MigrationEntry {
             version: versions::V2024_12_05_001,
             execute_fn: &migration_2024_12_05_001::execute,
+        },
+        MigrationEntry {
+            version: versions::V2024_12_10_001,
+            execute_fn: &migration_2024_12_10_001::execute,
         },
     ];
     migration_entries.iter().for_each(|entry| {
@@ -77,7 +82,7 @@ fn run_migrate_with_version(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::{Coin, Uint128};
+    use cosmwasm_std::{Addr, Coin, Uint128};
     use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env};
 
     #[test]
@@ -87,11 +92,13 @@ mod tests {
             amount: Uint128::new(2),
         }]);
 
-        let old_state = migration_2024_12_05_001::OldState {
+        migration_2024_12_05_001::OLD_STATE.save(deps.as_mut().storage, &migration_2024_12_05_001::OldState {
             count: 3,
             count_increment_count: 2,
-        };
-        migration_2024_12_05_001::OLD_STATE.save(deps.as_mut().storage, &old_state)?;
+        })?;
+        migration_2024_12_10_001::OLD_CONFIG.save(deps.as_mut().storage, &migration_2024_12_10_001::OldConfig {
+            contract_manager: Addr::unchecked("contract_manager"),
+        })?;
 
         // Ensure nothing saved
         assert!(SCHEMA_MIGRATION_VERSIONS.load(deps.as_mut().storage).is_err());
@@ -103,9 +110,7 @@ mod tests {
         );
         assert_eq!(
             res.attributes.iter().find(|a| a.key == "schema_migration_versions_run").unwrap().value,
-            vec![
-                versions::V2024_12_05_001.to_string(),
-            ].join(", "),
+            versions::ALL_VERSIONS.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(", "),
         );
 
         Ok(())

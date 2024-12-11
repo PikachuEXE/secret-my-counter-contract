@@ -1,8 +1,11 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult};
+use secret_toolkit::utils::{pad_handle_result};
 use crate::msg::ExecuteMsg;
+use crate::state::BLOCK_SIZE;
 
 mod increment;
 mod reset;
+mod permits;
 
 pub fn execute_dispatch(
     deps: DepsMut,
@@ -10,8 +13,11 @@ pub fn execute_dispatch(
     info: MessageInfo,
     msg: ExecuteMsg
 ) -> StdResult<Response> {
-    match msg {
+    let res = match msg {
         ExecuteMsg::Increment { count } => increment::try_increment(deps, env, info, count),
-        ExecuteMsg::Reset { count } => reset::try_reset(deps, info, count)
-    }
+        ExecuteMsg::Reset { count } => reset::try_reset(deps, info, count),
+        ExecuteMsg::RevokePermit { permit_name, .. } => permits::revoke_permit(deps, env, info, permit_name),
+    };
+
+    pad_handle_result(res, BLOCK_SIZE)
 }
