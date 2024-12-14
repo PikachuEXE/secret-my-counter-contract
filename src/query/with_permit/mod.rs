@@ -1,5 +1,5 @@
 use cosmwasm_std::{Deps, StdResult, StdError, Binary, to_binary};
-use secret_toolkit::permit::{validate, Permit, TokenPermissions};
+use secret_toolkit::permit::{validate, Permit};
 
 use crate::msg::{QueryAnswer, QueryWithPermit};
 use crate::state::PREFIX_REVOKED_PERMITS;
@@ -35,14 +35,11 @@ pub fn permit_query_dispatch(
     // Permit validated! We can now execute the query.
     let res: QueryAnswer = match query {
         QueryWithPermit::UserStatisticData {} => {
-            if !permit.check_permission(&TokenPermissions::Owner) || !permit.check_token(user_statistic_data::ACTION_TOKEN_NAME_4_PERMISSION) {
-                return Err(StdError::generic_err("unauthorized"));
-            }
-
             user_statistic_data::query_user_statistic_data(deps, viewer, None)?
         }
         QueryWithPermit::GlobalStatisticData {} => {
-            if !permit.check_permission(&TokenPermissions::Owner) || config.contract_manager != viewer {
+            // Only contract manager can check
+            if config.contract_manager != viewer {
                 return Err(StdError::generic_err("unauthorized"));
             }
 

@@ -4,8 +4,6 @@ use secret_toolkit::storage::Keymap;
 use crate::msg::QueryAnswer;
 use crate::state::user_statistic_data::{UserStatisticData, USER_STATISTIC_DATA_STORE};
 
-pub static ACTION_TOKEN_NAME_4_PERMISSION: &'static str = "user_statistic_data";
-
 pub fn query_user_statistic_data(deps: Deps, viewer: String, custom_store: Option<&Keymap<Addr, UserStatisticData, Json>>) -> StdResult<QueryAnswer> {
     let store = custom_store.unwrap_or_else(|| &USER_STATISTIC_DATA_STORE);
     let state = store.get(deps.storage, &deps.api.addr_validate(viewer.as_str())?).unwrap_or_default();
