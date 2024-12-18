@@ -23,4 +23,23 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
+
+  runtimeConfig: {
+    public: {
+      // NUXT_PUBLIC_CONTRACT_ADDRESS
+      contractAddress: '',
+      // NUXT_PUBLIC_SECRET_NODE_RPC
+      secretNodeRpc: '',
+      // NUXT_PUBLIC_SECRET_NODE_REST
+      secretNodeRest: '',
+      // NUXT_PUBLIC_SECRET_CHAIN_ID
+      secretChainId: '',
+      // NUXT_PUBLIC_SECRET_SHOULD_SUGGEST_CUSTOM_CHAIN
+      // Mainly for dev/testnet
+      shouldSuggestCustomChain: 'false',
+      // NUXT_PUBLIC_SECRET_CHAIN_NAME
+      // Mainly for dev/testnet, purely for display
+      secretChainName: 'Unknown Secret Chain',
+    }
+  },
 })

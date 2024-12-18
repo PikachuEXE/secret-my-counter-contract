@@ -201,12 +201,15 @@ import type {
 } from "@keplr-wallet/types"
 import { useConnectedWalletStore } from "~/composables/useWalletStore"
 
-const CONTRACT_ADDRESS = "secret1dxa7hnc9er05eanhlmzl49e64rakl094zurj7g"
-const SECRET_NODE_RPC = "http://192.168.2.19:26657"
-const SECRET_NODE_REST = "http://192.168.2.19:1317"
-const SECRET_CHAIN_ID = "secretdev-1"
+const runtimeConfig = useRuntimeConfig()
+const CONTRACT_ADDRESS = runtimeConfig.public.contractAddress
+const SECRET_NODE_RPC = runtimeConfig.public.secretNodeRpc
+const SECRET_NODE_REST = runtimeConfig.public.secretNodeRest
+const SECRET_CHAIN_ID = runtimeConfig.public.secretChainId
+// Should be dev/testnet only
+const SHOULD_SUGGEST_CUSTOM_CHAIN = runtimeConfig.public.shouldSuggestCustomChain.toString() === 'true'
 // Just for display
-const SECRET_CHAIN_NAME = "LocalSecret"
+const SECRET_CHAIN_NAME = runtimeConfig.public.secretChainName
 
 const secretNetworkClient: ComputedRef<undefined | SecretNetworkClient> = computed(() => {
   if (!keplrOfflineSigner.value || !keplrAccount.value) { return }
@@ -320,7 +323,9 @@ async function connectKeplr() {
     return
   }
 
-  await keplr!.experimentalSuggestChain(localChainInfoForKeplr)
+  if (SHOULD_SUGGEST_CUSTOM_CHAIN) {
+    await keplr!.experimentalSuggestChain(localChainInfoForKeplr)
+  }
   await keplr!.enable(SECRET_CHAIN_ID)
 
   const offlineSigner = keplr!.getOfflineSigner(SECRET_CHAIN_ID)
