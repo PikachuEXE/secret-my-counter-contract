@@ -272,6 +272,11 @@ const localChainInfoForKeplr: ChainInfo = {
       coinMinimalDenom: "uscrt",
       coinDecimals: 6,
       coinGeckoId: "secret",
+      gasPriceStep: {
+        low: 0.1,
+        average: 0.25,
+        high: 1,
+      },
     },
   ],
   stakeCurrency: {
@@ -279,12 +284,6 @@ const localChainInfoForKeplr: ChainInfo = {
     coinMinimalDenom: "uscrt",
     coinDecimals: 6,
     coinGeckoId: "secret",
-  },
-  coinType: 529,
-  gasPriceStep: {
-    low: 0.1,
-    average: 0.25,
-    high: 1,
   },
   features: ["secretwasm", "stargate", "ibc-transfer", "ibc-go"],
 }
