@@ -16,7 +16,23 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 const transactionStatusStore = useTransactionStatusStore()
+const { latestTransactionError } = storeToRefs(transactionStatusStore)
+const toast = useToast()
+
+watch(latestTransactionError, () => {
+  const error = latestTransactionError.value
+  if (error == null) { return }
+  if (error.message.includes("Request rejected")) {
+    toast.add({
+      title: 'Request rejected',
+      icon: 'i-carbon-stop-outline-filled',
+      color: 'yellow',
+      timeout: 5000,
+    })
+  }
+})
 </script>
 
 <style scoped>
