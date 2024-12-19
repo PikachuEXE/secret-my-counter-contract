@@ -28,6 +28,7 @@
           color="violet"
           variant="solid"
           @click="disconnectKeplr"
+          :disabled="transactionStatusStore.transactionInProgress"
         >
           Disconnect
         </UButton>
@@ -66,12 +67,11 @@
               :label="`Increase Count (${countIncreaseAmount})`"
               icon="i-carbon-arrow-up"
               block
-              :disabled="!secretNetworkClient && !txInProgress"
+              :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
               @click="increaseCount"
             />
-            <UProgress v-if="txInProgress" animation="carousel" />
             <UAlert
-              v-if="!txInProgress && lastCountIncreaseTxResponse"
+              v-if="!transactionStatusStore.transactionInProgress && lastCountIncreaseTxResponse"
               icon="i-carbon-checkmark"
               title="Done!"
               :close-button="{ icon: 'i-heroicons-x-mark-20-solid', color: 'gray', variant: 'link', padded: false }"
@@ -158,12 +158,11 @@
               :label="`Reset Count (${countResetValue})`"
               icon="i-carbon-arrow-up"
               block
-              :disabled="!secretNetworkClient && !txInProgress"
+              :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
               @click="resetCount"
             />
-            <UProgress v-if="txInProgress" animation="carousel" />
             <UAlert
-              v-if="!txInProgress && lastCountResetTxResponse"
+              v-if="!transactionStatusStore.transactionInProgress && lastCountResetTxResponse"
               icon="i-carbon-checkmark"
               title="Done!"
               :close-button="{ icon: 'i-heroicons-x-mark-20-solid', color: 'gray', variant: 'link', padded: false }"
@@ -181,6 +180,16 @@
         </UCard>
       </template>
     </UTabs>
+    <UNotificationStaticContainer>
+      <UNotificationWithProgress
+        v-if="transactionStatusStore.transactionInProgress"
+        id="notification-transactionInProgress"
+        title="Transaction in Progress"
+        icon="i-carbon-fetch-upload-cloud"
+        :timeout="0"
+        :close-button="false"
+      />
+    </UNotificationStaticContainer>
   </UContainer>
   <UNotifications />
 </template>
@@ -199,7 +208,6 @@ import type {
   Keplr,
   OfflineDirectSigner,
 } from "@keplr-wallet/types"
-import { useConnectedWalletStore } from "~/composables/useWalletStore"
 
 const runtimeConfig = useRuntimeConfig()
 const CONTRACT_ADDRESS = runtimeConfig.public.contractAddress
@@ -224,7 +232,7 @@ const secretNetworkClient: ComputedRef<undefined | SecretNetworkClient> = comput
   })
 })
 
-const txInProgress = ref(false)
+const transactionStatusStore = useTransactionStatusStore()
 
 // Clear all permits stored before this time
 const PERMIT_VALID_START_TIME_UNIX_MS = 0
@@ -426,21 +434,19 @@ const queryResultItems: ComputedRef<Array<any>> = computed(() => {
 const countIncreaseAmount = ref(1)
 const lastCountIncreaseTxResponse: Ref<null | TxResponse> = ref(null)
 async function increaseCount() {
-  txInProgress.value = true
+  await transactionStatusStore.runTransactionWithLock(async () => {
+    const msg = new MsgExecuteContract({
+      sender: keplrAccount.value!.address,
+      contract_address: CONTRACT_ADDRESS,
+      // code_hash: CONTRACT_CODE_HASH,
+      msg: { increment: { count: countIncreaseAmount.value } },
+      sent_funds: [],
+    })
 
-  const msg = new MsgExecuteContract({
-    sender: keplrAccount.value!.address,
-    contract_address: CONTRACT_ADDRESS,
-    // code_hash: CONTRACT_CODE_HASH,
-    msg: { increment: { count: countIncreaseAmount.value } },
-    sent_funds: [],
+    lastCountIncreaseTxResponse.value = await secretNetworkClient.value!.tx.broadcast([msg], {
+      gasLimit: 200_000,
+    })
   })
-
-  lastCountIncreaseTxResponse.value = await secretNetworkClient.value!.tx.broadcast([msg], {
-    gasLimit: 200_000,
-  })
-
-  txInProgress.value = false
 
   // Might as well
   await queryCount()
@@ -574,23 +580,28 @@ const queryGlobalStatsResultItems: ComputedRef<Array<any>> = computed(() => {
 const countResetValue = ref(0)
 const lastCountResetTxResponse: Ref<null | TxResponse> = ref(null)
 async function resetCount() {
-  txInProgress.value = true
+  await transactionStatusStore.runTransactionWithLock(async () => {
+    const msg = new MsgExecuteContract({
+      sender: keplrAccount.value!.address,
+      contract_address: CONTRACT_ADDRESS,
+      // code_hash: CONTRACT_CODE_HASH,
+      msg: { reset: { count: countResetValue.value } },
+      sent_funds: [],
+    })
 
-  const msg = new MsgExecuteContract({
-    sender: keplrAccount.value!.address,
-    contract_address: CONTRACT_ADDRESS,
-    // code_hash: CONTRACT_CODE_HASH,
-    msg: { reset: { count: countResetValue.value } },
-    sent_funds: [],
+    lastCountResetTxResponse.value = await secretNetworkClient.value!.tx.broadcast([msg], {
+      gasLimit: 200_000,
+    })
   })
-
-  lastCountResetTxResponse.value = await secretNetworkClient.value!.tx.broadcast([msg], {
-    gasLimit: 200_000,
-  })
-
-  txInProgress.value = false
 
   // Might as well
   await queryCount()
 }
 </script>
+
+<style scoped>
+/* Don't fire event on disabled whatever */
+.disabled {
+  pointer-events: none;
+}
+</style>
