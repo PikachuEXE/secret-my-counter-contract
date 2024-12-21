@@ -17,6 +17,9 @@ export default defineNuxtConfig({
     vue: {
       optionsAPI: false,
     },
+    assetsInclude: [
+      /\.svg/,
+    ],
   },
 
   compatibilityDate: "2024-12-11",

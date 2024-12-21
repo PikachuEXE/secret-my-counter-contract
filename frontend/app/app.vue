@@ -1,4 +1,5 @@
 <template>
+  <AppDesktopNav />
   <UContainer class="pt-10">
     <NuxtPage />
   </UContainer>
@@ -33,6 +34,10 @@ watch(latestTransactionError, () => {
     })
   }
 })
+
+const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
+// This should be called once per page load only, so placed in `app.vue`
+connectedWalletAndClientStore.tryAutoConnectKeplrSometimes()
 </script>
 
 <style scoped>

@@ -7,32 +7,6 @@
       </div>
     </template>
   </UCard>
-  <UCard class="mt-4">
-    <span>Wallet: </span>
-    <UButton
-      v-if="!secretNetworkClient"
-      class="ml-2 flex-grow-0"
-      icon="i-carbon-link"
-      color="violet"
-      variant="solid"
-      @click="connectKeplr"
-    >
-      Keplr
-    </UButton>
-    <template v-else>
-      <span>{{ keplrAccount?.address }}</span>
-      <UButton
-        class="ml-2 flex-grow-0"
-        icon="i-carbon-unlink"
-        color="violet"
-        variant="solid"
-        @click="disconnectKeplr"
-        :disabled="transactionStatusStore.transactionInProgress"
-      >
-        Disconnect
-      </UButton>
-    </template>
-  </UCard>
   <UTabs :items="funcTabsItems" class="mt-4">
     <template #main>
       <UCard class="mt-4">
@@ -184,185 +158,22 @@
 <script setup lang="ts">
 import {
   MsgExecuteContract,
-  SecretNetworkClient,
   type TxResponse,
   type Permit,
 } from "secretjs"
 import type { ComputedRef, Ref } from "@vue/reactivity"
-import type {
-  AccountData,
-  ChainInfo,
-  Keplr,
-  OfflineDirectSigner,
-} from "@keplr-wallet/types"
+import { useAppRuntimeConfig } from "~/composables/useAppRuntimeConfig"
 
-const runtimeConfig = useRuntimeConfig()
-const CONTRACT_ADDRESS = runtimeConfig.public.contractAddress
-const SECRET_NODE_RPC = runtimeConfig.public.secretNodeRpc
-const SECRET_NODE_REST = runtimeConfig.public.secretNodeRest
-const SECRET_CHAIN_ID = runtimeConfig.public.secretChainId
-// Should be dev/testnet only
-const SHOULD_SUGGEST_CUSTOM_CHAIN = runtimeConfig.public.shouldSuggestCustomChain.toString() === 'true'
-// Just for display
-const SECRET_CHAIN_NAME = runtimeConfig.public.secretChainName
+const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
+const { secretNetworkClient, keplrAccount } = storeToRefs(connectedWalletAndClientStore)
 
-const secretNetworkClient: ComputedRef<undefined | SecretNetworkClient> = computed(() => {
-  if (!keplrOfflineSigner.value || !keplrAccount.value) { return }
-  if (!window.keplr) { return }
-
-  return new SecretNetworkClient({
-    url: SECRET_NODE_REST,
-    chainId: SECRET_CHAIN_ID,
-    wallet: keplrOfflineSigner.value,
-    walletAddress: keplrAccount.value.address,
-    encryptionUtils: window.keplr!.getEnigmaUtils(SECRET_CHAIN_ID),
-  })
-})
+const { CONTRACT_ADDRESS, SECRET_CHAIN_ID } = useAppRuntimeConfig()
 
 const transactionStatusStore = useTransactionStatusStore()
 
 // Clear all permits stored before this time
 const PERMIT_VALID_START_TIME_UNIX_MS = 0
 const permitStore = usePermitStore()
-
-const toast = useToast()
-
-const connectedWalletStore = useConnectedWalletStore()
-
-
-declare global {
-  interface Window {
-    keplr: undefined | Keplr,
-  }
-}
-const keplrOfflineSigner: Ref<undefined | OfflineDirectSigner> = ref(undefined)
-const keplrAccount: Ref<undefined | AccountData> = ref(undefined)
-const localChainInfoForKeplr: ChainInfo = {
-  chainId: SECRET_CHAIN_ID,
-  chainName: SECRET_CHAIN_NAME,
-  rpc: SECRET_NODE_RPC,
-  rest: SECRET_NODE_REST,
-  bip44: {
-    coinType: 529,
-  },
-  bech32Config: {
-    bech32PrefixAccAddr: "secret",
-    bech32PrefixAccPub: "secretpub",
-    bech32PrefixValAddr: "secretvaloper",
-    bech32PrefixValPub: "secretvaloperpub",
-    bech32PrefixConsAddr: "secretvalcons",
-    bech32PrefixConsPub: "secretvalconspub",
-  },
-  currencies: [
-    {
-      coinDenom: "SCRT",
-      coinMinimalDenom: "uscrt",
-      coinDecimals: 6,
-      coinGeckoId: "secret",
-    },
-  ],
-  feeCurrencies: [
-    {
-      coinDenom: "SCRT",
-      coinMinimalDenom: "uscrt",
-      coinDecimals: 6,
-      coinGeckoId: "secret",
-      gasPriceStep: {
-        low: 0.1,
-        average: 0.25,
-        high: 1,
-      },
-    },
-  ],
-  stakeCurrency: {
-    coinDenom: "SCRT",
-    coinMinimalDenom: "uscrt",
-    coinDecimals: 6,
-    coinGeckoId: "secret",
-  },
-  features: ["secretwasm", "stargate", "ibc-transfer", "ibc-go"],
-}
-async function getKeplr(): Promise<Keplr | undefined> {
-  if (window.keplr) {
-    return window.keplr
-  }
-
-  if (document.readyState === "complete") {
-    return window.keplr
-  }
-
-  return new Promise((resolve) => {
-    const documentStateChange = (event: Event) => {
-      if (
-        event.target &&
-        (event.target as Document).readyState === "complete"
-      ) {
-        resolve(window.keplr)
-        document.removeEventListener("readystatechange", documentStateChange)
-      }
-    }
-
-    document.addEventListener("readystatechange", documentStateChange)
-  })
-}
-async function connectKeplr() {
-  const keplr = await getKeplr()
-  if (!keplr) {
-    toast.add({
-      title: 'Keplr not detected',
-      icon: 'i-mdi-alert',
-      color: 'yellow',
-      timeout: 5000,
-    })
-    return
-  }
-
-  if (SHOULD_SUGGEST_CUSTOM_CHAIN) {
-    await keplr!.experimentalSuggestChain(localChainInfoForKeplr)
-  }
-  await keplr!.enable(SECRET_CHAIN_ID)
-
-  const offlineSigner = keplr!.getOfflineSigner(SECRET_CHAIN_ID)
-  const accounts = await offlineSigner.getAccounts()
-
-  keplrOfflineSigner.value = offlineSigner
-  keplrAccount.value = accounts[0]
-  connectedWalletStore.setConnectedWalletTypeAsKeplr()
-}
-function disconnectKeplr() {
-  keplrOfflineSigner.value = undefined
-  keplrAccount.value = undefined
-  permitStore.clearAll()
-  connectedWalletStore.resetConnectedWalletType()
-}
-function autoConnectKeplrSometimes() {
-  if (connectedWalletStore.connectedWalletIsKeplr) {
-    connectKeplr()
-  }
-}
-if (import.meta.client) {
-  setTimeout(async () => {
-    if (window.keplr || document.readyState === "complete") {
-      autoConnectKeplrSometimes()
-      return
-    }
-
-    await new Promise((resolve) => {
-      const documentStateChange = (event: Event) => {
-        if (
-          event.target &&
-          (event.target as Document).readyState === "complete"
-        ) {
-          resolve(window.keplr)
-          document.removeEventListener("readystatechange", documentStateChange)
-        }
-      }
-
-      document.addEventListener("readystatechange", documentStateChange)
-    })
-    autoConnectKeplrSometimes()
-  }, 0)
-}
 
 
 const funcTabsItems = [{
