@@ -8,7 +8,7 @@ export const useTransactionStatusStore = defineStore("transactionStatus", {
   actions: {
     async runTransactionWithLock<T>(callback: () => Promise<T>) {
       // Fallback, frontend should be "locked" separately
-      if (this.transactionInProgress) { return }
+      if (this.transactionInProgress) { return "Error: Transaction In Progress" }
 
       this.transactionInProgress = true
       try {

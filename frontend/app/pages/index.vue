@@ -157,17 +157,17 @@
 
 <script setup lang="ts">
 import {
-  MsgExecuteContract,
   type TxResponse,
   type Permit,
 } from "secretjs"
 import type { ComputedRef, Ref } from "@vue/reactivity"
-import { useAppRuntimeConfig } from "~/composables/useAppRuntimeConfig"
 
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
 const { secretNetworkClient, keplrAccount } = storeToRefs(connectedWalletAndClientStore)
 
 const { CONTRACT_ADDRESS, SECRET_CHAIN_ID } = useAppRuntimeConfig()
+
+const secretClientProxy = useSecretClientProxy()
 
 const transactionStatusStore = useTransactionStatusStore()
 
@@ -192,12 +192,8 @@ const queryCountError = ref(null) as Ref<String | null>
 const queryResultLastUpdatedAt = ref("")
 
 async function queryCount() {
-  const queryResult = await secretNetworkClient.value!.query.compute.queryContract({
-    contract_address: CONTRACT_ADDRESS,
-    // code_hash: CONTRACT_CODE_HASH,
-    query: {
-      get_count: {},
-    },
+  const queryResult = await secretClientProxy.queryContract({
+    get_count: {},
   }) as {count: number} | string
   if (typeof queryResult === "string") {
     count.value = null
@@ -232,18 +228,9 @@ const queryResultItems: ComputedRef<Array<any>> = computed(() => {
 const countIncreaseAmount = ref(1)
 const lastCountIncreaseTxResponse: Ref<null | TxResponse> = ref(null)
 async function increaseCount() {
-  await transactionStatusStore.runTransactionWithLock(async () => {
-    const msg = new MsgExecuteContract({
-      sender: keplrAccount.value!.address,
-      contract_address: CONTRACT_ADDRESS,
-      // code_hash: CONTRACT_CODE_HASH,
-      msg: { increment: { count: countIncreaseAmount.value } },
-      sent_funds: [],
-    })
-
-    lastCountIncreaseTxResponse.value = await secretNetworkClient.value!.tx.broadcast([msg], {
-      gasLimit: 200_000,
-    })
+  await secretClientProxy.executeContract({
+    msg: { increment: { count: countIncreaseAmount.value } },
+    onSuccess: (res) => { lastCountIncreaseTxResponse.value = res }
   })
 
   // Might as well
@@ -283,16 +270,12 @@ const queryPersonalStatsResultLastUpdatedAt = ref("")
 async function queryPersonalStats() {
   const permit = await getOwnerPermit()
 
-  let queryResult = await secretNetworkClient.value!.query.compute.queryContract({
-    contract_address: CONTRACT_ADDRESS,
-    // code_hash: CONTRACT_CODE_HASH,
-    query: {
-      with_permit: {
-        query: {
-          user_statistic_data: {},
-        },
-        permit: permit,
+  const queryResult = await secretClientProxy.queryContract({
+    with_permit: {
+      query: {
+        user_statistic_data: {},
       },
+      permit: permit,
     },
   }) as {user_statistic_data: PersonalStats} | string
   if (typeof queryResult === "string") {
@@ -334,16 +317,12 @@ const queryGlobalStatsResultLastUpdatedAt = ref("")
 async function queryGlobalStats() {
   const permit = await getOwnerPermit()
 
-  let queryResult = await secretNetworkClient.value!.query.compute.queryContract({
-    contract_address: CONTRACT_ADDRESS,
-    // code_hash: CONTRACT_CODE_HASH,
-    query: {
-      with_permit: {
-        query: {
-          global_statistic_data: {},
-        },
-        permit: permit,
+  const queryResult = await secretClientProxy.queryContract({
+    with_permit: {
+      query: {
+        global_statistic_data: {},
       },
+      permit: permit,
     },
   }) as {global_statistic_data: GlobalStats} | string
   if (typeof queryResult === "string") {
@@ -378,18 +357,9 @@ const queryGlobalStatsResultItems: ComputedRef<Array<any>> = computed(() => {
 const countResetValue = ref(0)
 const lastCountResetTxResponse: Ref<null | TxResponse> = ref(null)
 async function resetCount() {
-  await transactionStatusStore.runTransactionWithLock(async () => {
-    const msg = new MsgExecuteContract({
-      sender: keplrAccount.value!.address,
-      contract_address: CONTRACT_ADDRESS,
-      // code_hash: CONTRACT_CODE_HASH,
-      msg: { reset: { count: countResetValue.value } },
-      sent_funds: [],
-    })
-
-    lastCountResetTxResponse.value = await secretNetworkClient.value!.tx.broadcast([msg], {
-      gasLimit: 200_000,
-    })
+  await secretClientProxy.executeContract({
+    msg: { reset: { count: countResetValue.value } },
+    onSuccess: (res) => { lastCountResetTxResponse.value = res }
   })
 
   // Might as well
