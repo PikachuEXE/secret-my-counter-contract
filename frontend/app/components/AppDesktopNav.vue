@@ -138,6 +138,7 @@ const links = [
   {
     label: 'Home',
     icon: 'i-mdi-home',
+    to: '/',
   },
 ]
 
