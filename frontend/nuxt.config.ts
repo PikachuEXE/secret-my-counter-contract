@@ -44,6 +44,10 @@ export default defineNuxtConfig({
       // NUXT_PUBLIC_SECRET_CHAIN_NAME
       // Mainly for dev/testnet, purely for display
       secretChainName: 'Unknown Secret Chain',
+
+      // NUXT_PUBLIC_PERMIT_VALID_START_TIME_UNIX_MS
+      // Permit before this time will be considered as invalid
+      permitValidStartTimeUnixMs: 0,
     }
   },
 })

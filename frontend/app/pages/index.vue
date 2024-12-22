@@ -163,17 +163,13 @@ import {
 import type { ComputedRef, Ref } from "@vue/reactivity"
 
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
-const { secretNetworkClient, keplrAccount } = storeToRefs(connectedWalletAndClientStore)
+const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
 
-const { CONTRACT_ADDRESS, SECRET_CHAIN_ID } = useAppRuntimeConfig()
+const { CONTRACT_ADDRESS } = useAppRuntimeConfig()
 
 const secretClientProxy = useSecretClientProxy()
 
 const transactionStatusStore = useTransactionStatusStore()
-
-// Clear all permits stored before this time
-const PERMIT_VALID_START_TIME_UNIX_MS = 0
-const permitStore = usePermitStore()
 
 
 const funcTabsItems = [{
@@ -237,27 +233,13 @@ async function increaseCount() {
   await queryCount()
 }
 
-
-async function getActivePermitWithFallbackPersisted(permitName: string, fallbackFunc: () => Promise<Permit>): Promise<Permit> {
-  permitStore.clearAllInvalidPermits(PERMIT_VALID_START_TIME_UNIX_MS)
-  const permit = permitStore.getPermit(permitName)
-  if (permit != null) { return permit }
-
-  const newPermit = await fallbackFunc()
-  permitStore.storePermit(permitName, newPermit)
-  return newPermit
-}
-async function getOwnerPermit() {
-  // Rename this later maybe
-  const permitName = "owner"
-  return await getActivePermitWithFallbackPersisted(permitName, async () => await secretNetworkClient.value!.utils.accessControl.permit.sign(
-    keplrAccount.value!.address,
-    SECRET_CHAIN_ID,
-    permitName,
-    [CONTRACT_ADDRESS],
-    ["owner"],
-    true,
-  ))
+async function getOwnerPermit(onSuccess: (permit: Permit) => void) {
+  return await secretClientProxy.getPermit({
+    permitName: "owner",
+    allowedContracts: [CONTRACT_ADDRESS],
+    permissions: ["owner"],
+    onSuccess: onSuccess,
+  })
 }
 
 
@@ -268,26 +250,26 @@ const personalStats: Ref<null | PersonalStats> = ref(null)
 const queryPersonalStatsError = ref(null) as Ref<String | null>
 const queryPersonalStatsResultLastUpdatedAt = ref("")
 async function queryPersonalStats() {
-  const permit = await getOwnerPermit()
-
-  const queryResult = await secretClientProxy.queryContract({
-    with_permit: {
-      query: {
-        user_statistic_data: {},
+  await getOwnerPermit(async (permit) => {
+    const queryResult = await secretClientProxy.queryContract({
+      with_permit: {
+        query: {
+          user_statistic_data: {},
+        },
+        permit: permit,
       },
-      permit: permit,
-    },
-  }) as {user_statistic_data: PersonalStats} | string
-  if (typeof queryResult === "string") {
-    personalStats.value = null
-    queryPersonalStatsError.value = queryResult
-    queryPersonalStatsResultLastUpdatedAt.value = Date.now().toString()
-    return
-  }
+    }) as {user_statistic_data: PersonalStats} | string
+    if (typeof queryResult === "string") {
+      personalStats.value = null
+      queryPersonalStatsError.value = queryResult
+      queryPersonalStatsResultLastUpdatedAt.value = Date.now().toString()
+      return
+    }
 
-  personalStats.value = queryResult.user_statistic_data
-  queryPersonalStatsError.value = null
-  queryPersonalStatsResultLastUpdatedAt.value = Date.now().toString()
+    personalStats.value = queryResult.user_statistic_data
+    queryPersonalStatsError.value = null
+    queryPersonalStatsResultLastUpdatedAt.value = Date.now().toString()
+  })
 }
 const queryPersonalStatsResultItems: ComputedRef<Array<any>> = computed(() => {
   return [
@@ -315,26 +297,26 @@ const globalStats: Ref<null | GlobalStats> = ref(null)
 const queryGlobalStatsError = ref(null) as Ref<String | null>
 const queryGlobalStatsResultLastUpdatedAt = ref("")
 async function queryGlobalStats() {
-  const permit = await getOwnerPermit()
-
-  const queryResult = await secretClientProxy.queryContract({
-    with_permit: {
-      query: {
-        global_statistic_data: {},
+  await getOwnerPermit(async (permit) => {
+    const queryResult = await secretClientProxy.queryContract({
+      with_permit: {
+        query: {
+          global_statistic_data: {},
+        },
+        permit: permit,
       },
-      permit: permit,
-    },
-  }) as {global_statistic_data: GlobalStats} | string
-  if (typeof queryResult === "string") {
-    globalStats.value = null
-    queryGlobalStatsError.value = queryResult
-    queryGlobalStatsResultLastUpdatedAt.value = Date.now().toString()
-    return
-  }
+    }) as {global_statistic_data: GlobalStats} | string
+    if (typeof queryResult === "string") {
+      globalStats.value = null
+      queryGlobalStatsError.value = queryResult
+      queryGlobalStatsResultLastUpdatedAt.value = Date.now().toString()
+      return
+    }
 
-  globalStats.value = queryResult.global_statistic_data
-  queryGlobalStatsError.value = null
-  queryGlobalStatsResultLastUpdatedAt.value = Date.now().toString()
+    globalStats.value = queryResult.global_statistic_data
+    queryGlobalStatsError.value = null
+    queryGlobalStatsResultLastUpdatedAt.value = Date.now().toString()
+  })
 }
 const queryGlobalStatsResultItems: ComputedRef<Array<any>> = computed(() => {
   return [
