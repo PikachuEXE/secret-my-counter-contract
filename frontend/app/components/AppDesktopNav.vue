@@ -143,7 +143,7 @@ const links = [
 ]
 
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
-const { secretNetworkClient, keplrAccount, truncatedAddress } = storeToRefs(connectedWalletAndClientStore)
+const { secretNetworkClient, truncatedAddress } = storeToRefs(connectedWalletAndClientStore)
 const { connectKeplr, disconnectKeplr } = connectedWalletAndClientStore
 
 const transactionStatusStore = useTransactionStatusStore()
@@ -155,19 +155,22 @@ import keplrIconUrl from '~/assets/Keplr_icon_ver.1.3_2.svg'
 <style scoped>
 nav {
   border-right: 1.5px solid rgba(228,228,228,.1);
+  padding: 25px;
 
   position: fixed;
 
   width: 100%;
-  height: 100%;
   max-width: 250px;
-  padding: 25px;
+  height: 100%;
 }
 .nav-footer {
   border-top: 1px solid rgba(228,228,228,.1);
+  padding-top: 20px;
+  padding-bottom: 20px;
 
   position: fixed;
   bottom: 0;
+
   width: 100%;
   max-width: 200px;
 
@@ -175,8 +178,6 @@ nav {
   flex-direction: column;
 }
 .wallet {
-  margin-top: 20px;
-  margin-bottom: 20px;
   width: 100%;
 }
 </style>

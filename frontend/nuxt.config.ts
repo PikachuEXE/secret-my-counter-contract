@@ -12,6 +12,9 @@ export default defineNuxtConfig({
     "@vueuse/nuxt",
   ],
 
+  colorMode: {
+    preference: 'dark',
+  },
 
   vite: {
     vue: {
