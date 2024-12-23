@@ -22,12 +22,12 @@ struct MigrationEntry<'a> {
     execute_fn: &'a dyn Fn(&mut DepsMut, Env) -> StdResult<Response>
 }
 
-fn migrate_state(mut deps: DepsMut, env: Env) -> StdResult<Response> {
-    let mut schema_migration_versions = SCHEMA_MIGRATION_VERSIONS.load(deps.storage).unwrap_or(vec![]);
+pub fn all_migration_version() -> Vec<String> {
+    all_migration_entries().iter().map(|m| m.version.to_string()).collect()
+}
 
-    let last_version = schema_migration_versions.last().cloned().unwrap_or("none".to_string());
-    let mut versions_run = vec![];
-    let migration_entries: [MigrationEntry; 2] = [
+fn all_migration_entries<'a>() -> Vec<MigrationEntry<'a>> {
+    Vec::from([
         MigrationEntry {
             version: versions::V2024_12_05_001,
             execute_fn: &migration_2024_12_05_001::execute,
@@ -36,7 +36,15 @@ fn migrate_state(mut deps: DepsMut, env: Env) -> StdResult<Response> {
             version: versions::V2024_12_10_001,
             execute_fn: &migration_2024_12_10_001::execute,
         },
-    ];
+    ])
+}
+
+fn migrate_state(mut deps: DepsMut, env: Env) -> StdResult<Response> {
+    let mut schema_migration_versions = SCHEMA_MIGRATION_VERSIONS.load(deps.storage).unwrap_or(vec![]);
+
+    let last_version = schema_migration_versions.last().cloned().unwrap_or("none".to_string());
+    let mut versions_run = vec![];
+    let migration_entries = all_migration_entries();
     migration_entries.iter().for_each(|entry| {
         run_migrate_with_version(
             entry.version,
@@ -110,7 +118,7 @@ mod tests {
         );
         assert_eq!(
             res.attributes.iter().find(|a| a.key == "schema_migration_versions_run").unwrap().value,
-            versions::ALL_VERSIONS.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(", "),
+            all_migration_version().join(", "),
         );
 
         Ok(())
@@ -126,13 +134,13 @@ mod tests {
         // Mark it as all migration run
         SCHEMA_MIGRATION_VERSIONS.save(
             deps.as_mut().storage,
-            &crate::migrate::versions::ALL_VERSIONS.iter().map(|s| s.to_string()).collect(),
+            &crate::migrate::all_migration_version(),
         )?;
 
         let res = migrate_state(deps.as_mut(), mock_env())?;
         assert_eq!(
             res.attributes.iter().find(|a| a.key == "last_version").unwrap().value,
-            crate::migrate::versions::ALL_VERSIONS.last().cloned().unwrap_or("none").to_string(),
+            crate::migrate::all_migration_version().last().cloned().unwrap_or("none".to_string()),
         );
         assert_eq!(
             res.attributes.iter().find(|a| a.key == "schema_migration_versions_run").unwrap().value,

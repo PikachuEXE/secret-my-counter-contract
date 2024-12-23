@@ -23,7 +23,7 @@ pub fn perform_instantiate(
     };
 
     // Add run migration versions later
-    let schema_migrations = crate::migrate::versions::ALL_VERSIONS.iter().map(|s| s.to_string()).collect();
+    let schema_migrations = crate::migrate::all_migration_version();
 
     STATE.save(deps.storage, &state)?;
     CONFIG.save(deps.storage, &config)?;
@@ -75,7 +75,7 @@ mod tests {
         let schema_migrations = SCHEMA_MIGRATION_VERSIONS.load(deps.as_ref().storage);
         assert_eq!(
             schema_migrations,
-            Ok(crate::migrate::versions::ALL_VERSIONS.iter().map(|s| s.to_string()).collect()),
+            Ok(crate::migrate::all_migration_version()),
         );
 
         Ok(())
