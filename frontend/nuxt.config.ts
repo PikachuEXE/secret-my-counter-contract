@@ -20,6 +20,13 @@ export default defineNuxtConfig({
     assetsInclude: [
       /\.svg/,
     ],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
+      },
+    },
   },
 
   compatibilityDate: "2024-12-11",
