@@ -329,10 +329,3 @@ async function resetCount() {
   await queryCount()
 }
 </script>
-
-<style scoped>
-/* Don't fire event on disabled whatever */
-.disabled {
-  pointer-events: none;
-}
-</style>
