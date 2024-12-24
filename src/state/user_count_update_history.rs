@@ -39,17 +39,17 @@ impl UserCountUpdateHistoryManager {
         Ok(())
     }
 
-    pub fn get_global_entries<'a>(storage: &dyn Storage, page: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
+    pub fn get_global_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
         let store = if let Some(suffix) = suffix_4_test {
             &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
         } else {
             &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
         };
         store.
-            paging(storage, page, page_size).unwrap().iter().
+            paging(storage, page_zero_based, page_size).unwrap().iter().
             map(|t| t.1.clone()).collect()
     }
-    pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
+    pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page_zero_based: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
         let store = if let Some(suffix) = suffix_4_test {
             &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
         } else {
@@ -57,7 +57,7 @@ impl UserCountUpdateHistoryManager {
         };
 
         UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr).
-            paging(storage, page, page_size).unwrap().iter().
+            paging(storage, page_zero_based, page_size).unwrap().iter().
             map(|id| store.get(storage, id).unwrap()).
             collect::<Vec<UserCountUpdateHistoryEntry>>()
     }
@@ -87,13 +87,15 @@ mod tests {
     use super::*;
     use cosmwasm_std::{StdResult};
     use cosmwasm_std::testing::*;
-    use rand::distributions::{Alphanumeric, DistString};
+    use nanoid::nanoid;
 
     #[test]
     fn data_store_with_keymap_works() -> StdResult<()> {
         let mut deps = mock_dependencies();
-        let store = USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(Alphanumeric.sample_string(&mut rand::thread_rng(), 32).as_bytes());
-        let key = Alphanumeric.sample_string(&mut rand::thread_rng(), 32);
+        let suffix_4_test_str = nanoid!();
+        let suffix_4_test = suffix_4_test_str.as_bytes();
+        let store = USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix_4_test);
+        let key = nanoid!();
         let user_addr = Addr::unchecked("whatever");
 
         // is_empty
@@ -128,7 +130,9 @@ mod tests {
     #[test]
     fn test_data_stores_with_keymap_iter() -> StdResult<()> {
         let mut deps = mock_dependencies();
-        let store = USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(Alphanumeric.sample_string(&mut rand::thread_rng(), 32).as_bytes());
+        let suffix_4_test_str = nanoid!();
+        let suffix_4_test = suffix_4_test_str.as_bytes();
+        let store = USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix_4_test);
         let key1 = String::from("key1");
         let key2 = String::from("key2");
         let key3 = String::from("key3");
@@ -136,40 +140,29 @@ mod tests {
 
         assert_eq!(store.is_empty(deps.as_ref().storage), Ok(true));
         // save + load
-        assert!(store.insert(deps.as_mut().storage, &key1.clone(), &UserCountUpdateHistoryEntry{
-            user_addr: user_addr.clone(),
-            count_change: 1,
-            created_at: Default::default(),
-        }).is_ok());
-        assert_eq!(store.get(deps.as_ref().storage, &key1.clone()), Some(UserCountUpdateHistoryEntry{
-            user_addr: user_addr.clone(),
-            count_change: 1,
-            created_at: Default::default(),
-        }));
 
-        // save + load
-        assert!(store.insert(deps.as_mut().storage, &key2.clone(), &UserCountUpdateHistoryEntry{
-            user_addr: user_addr.clone(),
-            count_change: 2,
-            created_at: Default::default(),
-        }).is_ok());
-        assert_eq!(store.get(deps.as_ref().storage, &key2.clone()), Some(UserCountUpdateHistoryEntry{
-            user_addr: user_addr.clone(),
-            count_change: 2,
-            created_at: Default::default(),
-        }));
-
-        // save + load
-        assert!(store.insert(deps.as_mut().storage, &key3.clone(), &UserCountUpdateHistoryEntry{
-            user_addr: user_addr.clone(),
-            count_change: 3,
-            created_at: Default::default(),
-        }).is_ok());
-        assert_eq!(store.get(deps.as_ref().storage, &key3.clone()), Some(UserCountUpdateHistoryEntry{
-            user_addr: user_addr.clone(),
-            count_change: 3,
-            created_at: Default::default(),
-        }));
+        let entries: Vec<(&String, UserCountUpdateHistoryEntry)> = vec![
+            (&key1, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 1,
+                created_at: Default::default(),
+            }),
+            (&key2, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 2,
+                created_at: Default::default(),
+            }),
+            (&key3, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 3,
+                created_at: Default::default(),
+            }),
+        ];
+        entries.iter().for_each(|entry| {
+            // save + load
+            assert!(store.insert(deps.as_mut().storage, &entry.0.clone(), &entry.1.clone()).is_ok());
+            assert_eq!(store.get(deps.as_ref().storage, &entry.0.clone()), Some(entry.1.clone()));
+        });
 
         let mut x = store.iter(deps.as_ref().storage)?;
         // Probably in order until stuff got deleted, see KeySet
@@ -203,6 +196,140 @@ mod tests {
 
         let mut x = store.iter(deps.as_ref().storage)?;
         assert_eq!(x.next().is_none(), true);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_user_entries() -> StdResult<()> {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let suffix_4_test_str = nanoid!();
+        let suffix_4_test = suffix_4_test_str.as_bytes();
+        let store = USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix_4_test);
+        let key1 = String::from("key1");
+        let key2 = String::from("key2");
+        let key3 = String::from("key3");
+        let user_addr = Addr::unchecked("whatever");
+
+        assert_eq!(store.is_empty(deps.as_ref().storage), Ok(true));
+        // save + load
+
+        let entries: Vec<(&String, UserCountUpdateHistoryEntry)> = vec![
+            (&key1, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 1,
+                created_at: Default::default(),
+            }),
+            (&key2, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 2,
+                created_at: Default::default(),
+            }),
+            (&key3, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 3,
+                created_at: Default::default(),
+            }),
+        ];
+        entries.iter().for_each(|entry| {
+            // save + load
+            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, env.clone(), entry.1.clone(), Some(suffix_4_test)).unwrap()
+        });
+
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 0, 2, Some(suffix_4_test)),
+            vec![
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr.clone(),
+                    count_change: 1,
+                    created_at: Default::default(),
+                },
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr.clone(),
+                    count_change: 2,
+                    created_at: Default::default(),
+                },
+            ],
+        );
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 1, 2, Some(suffix_4_test)),
+            vec![
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr.clone(),
+                    count_change: 3,
+                    created_at: Default::default(),
+                },
+            ],
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_global_entries() -> StdResult<()> {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let suffix_4_test_str = nanoid!();
+        let suffix_4_test = suffix_4_test_str.as_bytes();
+        let store = USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix_4_test);
+        let key1 = String::from("key1");
+        let key2 = String::from("key2");
+        let key3 = String::from("key3");
+        let user_addr_1 = Addr::unchecked("user_addr_1");
+        let user_addr_2 = Addr::unchecked("user_addr_2");
+        let user_addr_3 = Addr::unchecked("user_addr_3");
+
+        assert_eq!(store.is_empty(deps.as_ref().storage), Ok(true));
+        // save + load
+
+        let entries: Vec<(&String, UserCountUpdateHistoryEntry)> = vec![
+            (&key1, UserCountUpdateHistoryEntry{
+                user_addr: user_addr_1.clone(),
+                count_change: 1,
+                created_at: Default::default(),
+            }),
+            (&key2, UserCountUpdateHistoryEntry{
+                user_addr: user_addr_2.clone(),
+                count_change: 2,
+                created_at: Default::default(),
+            }),
+            (&key3, UserCountUpdateHistoryEntry{
+                user_addr: user_addr_3.clone(),
+                count_change: 3,
+                created_at: Default::default(),
+            }),
+        ];
+        entries.iter().for_each(|entry| {
+            // save + load
+            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, env.clone(), entry.1.clone(), Some(suffix_4_test)).unwrap()
+        });
+
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 0, 2, Some(suffix_4_test)),
+            vec![
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr_1.clone(),
+                    count_change: 1,
+                    created_at: Default::default(),
+                },
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr_2.clone(),
+                    count_change: 2,
+                    created_at: Default::default(),
+                },
+            ],
+        );
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 1, 2, Some(suffix_4_test)),
+            vec![
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr_3.clone(),
+                    count_change: 3,
+                    created_at: Default::default(),
+                },
+            ],
+        );
 
         Ok(())
     }
