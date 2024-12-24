@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize};
 use secret_toolkit::storage::{Item, Keymap, Keyset};
 use secret_toolkit::serialization::{Json};
 
-use secret_toolkit::storage::keymap::KeyItemIter;
-
 use sqids::Sqids;
 
 static USER_COUNT_UPDATE_HISTORY_ENTRY_STORE: Keymap<String, UserCountUpdateHistoryEntry, Json> = Keymap::new(b"user_count_update_history__entry");
@@ -26,22 +24,41 @@ pub struct UserCountUpdateHistoryEntry {
 #[derive(Default)]
 pub struct UserCountUpdateHistoryManager{}
 impl UserCountUpdateHistoryManager {
-    pub fn add_entry(storage: &mut dyn Storage, env: Env, history_entry: UserCountUpdateHistoryEntry) -> StdResult<()> {
+    pub fn add_entry(storage: &mut dyn Storage, env: Env, history_entry: UserCountUpdateHistoryEntry, suffix_4_test: Option<&[u8]>) -> StdResult<()> {
         let next_sqid = get_next_generated_sqid(storage, env)?;
         let user_addr = history_entry.user_addr.clone();
 
-        USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.insert(storage, &next_sqid.clone(), &history_entry)?;
+        let store = if let Some(suffix) = suffix_4_test {
+            &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
+        } else {
+            &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
+        };
+        store.insert(storage, &next_sqid.clone(), &history_entry)?;
         UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr).insert(storage, &next_sqid.clone())?;
 
         Ok(())
     }
-    pub fn iter_all_entries(storage: &dyn Storage) -> StdResult<KeyItemIter<String, UserCountUpdateHistoryEntry, Json>> {
-        USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.iter(storage)
+
+    pub fn get_global_entries<'a>(storage: &dyn Storage, page: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
+        let store = if let Some(suffix) = suffix_4_test {
+            &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
+        } else {
+            &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
+        };
+        store.
+            paging(storage, page, page_size).unwrap().iter().
+            map(|t| t.1.clone()).collect()
     }
-    pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page: u32, page_size: u32) -> Vec<UserCountUpdateHistoryEntry> {
+    pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
+        let store = if let Some(suffix) = suffix_4_test {
+            &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
+        } else {
+            &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
+        };
+
         UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr).
             paging(storage, page, page_size).unwrap().iter().
-            map(|id| USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.get(storage, id).unwrap()).
+            map(|id| store.get(storage, id).unwrap()).
             collect::<Vec<UserCountUpdateHistoryEntry>>()
     }
 

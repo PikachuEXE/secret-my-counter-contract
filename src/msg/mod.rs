@@ -50,6 +50,11 @@ pub enum QueryWithPermit {
         page: Option<u32>,
         page_size: Option<u32>,
     },
+
+    GlobalUserCountUpdateHistoryEntries {
+        page: Option<u32>,
+        page_size: Option<u32>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]

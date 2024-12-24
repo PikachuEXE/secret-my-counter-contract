@@ -24,7 +24,7 @@ pub fn try_increment(deps: DepsMut, env: Env, info: MessageInfo, count: Option<i
         user_addr: info.sender.clone(),
         count_change,
         created_at: env.block.time.clone(),
-    })?;
+    }, None)?;
 
     deps.api.debug("count incremented successfully");
     Ok(Response::default())
