@@ -10,11 +10,14 @@ export default defineNuxtConfig({
     "pinia-plugin-persistedstate/nuxt",
     "@nuxt/icon",
     "@vueuse/nuxt",
+    "nuxt-time",
   ],
 
   colorMode: {
     preference: 'dark',
   },
+
+  pages: true,
 
   vite: {
     vue: {
