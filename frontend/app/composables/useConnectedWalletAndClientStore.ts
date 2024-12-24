@@ -63,7 +63,6 @@ export const useConnectedWalletAndClientStore = defineStore("connectedWalletAndC
       if (!state.keplrAccount) { return "" }
 
       // `secret1` = 7, plus 4 chars
-      console.log('address', state.keplrAccount.address)
       const address = state.keplrAccount.address
       const start = address.substring(0, 7 + 4 - 1)
       const end = address.substring(address.length - 1 - 4, address.length - 1)
