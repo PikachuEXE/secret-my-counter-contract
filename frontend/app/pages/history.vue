@@ -131,7 +131,9 @@ async function queryPersonalUserCountUpdateHistoryEntries() {
     const queryResult = await secretClientProxy.queryContract({
       with_permit: {
         query: {
-          user_count_update_history_entries: {},
+          user_count_update_history_entries: {
+            reverse_order: true,
+          },
         },
         permit: permit,
       },
@@ -174,7 +176,9 @@ async function queryGlobalUserCountUpdateHistoryEntries() {
     const queryResult = await secretClientProxy.queryContract({
       with_permit: {
         query: {
-          global_user_count_update_history_entries: {},
+          global_user_count_update_history_entries: {
+            reverse_order: true,
+          },
         },
         permit: permit,
       },
