@@ -45,6 +45,11 @@ pub enum QueryMsg {
 pub enum QueryWithPermit {
     UserStatisticData {},
     GlobalStatisticData {},
+
+    UserCountUpdateHistoryEntries {
+        page: Option<u32>,
+        page_size: Option<u32>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]

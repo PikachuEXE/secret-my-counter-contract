@@ -1,3 +1,4 @@
+use cosmwasm_std::{Addr};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -17,4 +18,16 @@ pub enum QueryAnswer {
         count_increment_count: i32,
         count_reset_count: i32,
     },
+
+    UserCountUpdateHistoryEntries {
+        entries: Vec<UserCountUpdateHistoryEntryInResponse>,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct UserCountUpdateHistoryEntryInResponse {
+    pub user_addr: Addr,
+    pub count_change: i32,
+    // Using milliseconds since JS `Date` uses it
+    pub created_at_in_ms: u64,
 }
