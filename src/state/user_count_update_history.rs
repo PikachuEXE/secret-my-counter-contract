@@ -25,7 +25,7 @@ pub struct UserCountUpdateHistoryEntry {
 #[derive(Default)]
 pub struct UserCountUpdateHistoryManager{}
 impl UserCountUpdateHistoryManager {
-    pub fn add_entry(storage: &mut dyn Storage, env: Env, history_entry: UserCountUpdateHistoryEntry, suffix_4_test: Option<&[u8]>) -> StdResult<()> {
+    pub fn add_entry(storage: &mut dyn Storage, env: &Env, history_entry: UserCountUpdateHistoryEntry, suffix_4_test: Option<&[u8]>) -> StdResult<()> {
         let next_sqid = get_next_generated_sqid(storage, env)?;
         let user_addr = history_entry.user_addr.clone();
 
@@ -40,48 +40,36 @@ impl UserCountUpdateHistoryManager {
         Ok(())
     }
 
-    pub fn get_global_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
-        let store = if let Some(suffix) = suffix_4_test {
-            &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
-        } else {
-            &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
-        };
-        store.
-            paging(storage, page_zero_based, page_size).unwrap().iter().
-            map(|t| t.1.clone()).collect()
-    }
-    pub fn get_global_entries_reversed<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
+    pub fn get_global_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
         let store = if let Some(suffix) = suffix_4_test {
             &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
         } else {
             &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
         };
 
-        keymap_reverse_paging(store, storage, page_zero_based, page_size).unwrap().iter().
-            map(|t| t.1.clone()).
-            collect::<Vec<UserCountUpdateHistoryEntry>>()
+        let items = if reverse_order {
+            keymap_reverse_paging(store, storage, page_zero_based, page_size)
+        }
+        else {
+            store.paging(storage, page_zero_based, page_size)
+        };
+        items.unwrap().iter().map(|t| t.1.clone()).collect()
     }
-    pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page_zero_based: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
+    pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
         let store = if let Some(suffix) = suffix_4_test {
             &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
         } else {
             &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
         };
 
-        UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr).
-            paging(storage, page_zero_based, page_size).unwrap().iter().
-            map(|id| store.get(storage, id).unwrap()).
-            collect::<Vec<UserCountUpdateHistoryEntry>>()
-    }
-    pub fn get_user_entries_reversed<'a>(storage: &dyn Storage, user_addr: Addr, page_zero_based: u32, page_size: u32, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
-        let store = if let Some(suffix) = suffix_4_test {
-            &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
-        } else {
-            &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
+        let user_addr_index = UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr);
+        let items = if reverse_order {
+            keyset_reverse_paging(&user_addr_index, storage, page_zero_based, page_size)
+        }
+        else {
+            user_addr_index.paging(storage, page_zero_based, page_size)
         };
-
-        let index_store = UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr);
-        keyset_reverse_paging(&index_store, storage, page_zero_based, page_size).unwrap().iter().
+        items.unwrap().iter().
             map(|id| store.get(storage, id).unwrap()).
             collect::<Vec<UserCountUpdateHistoryEntry>>()
     }
@@ -91,9 +79,9 @@ impl UserCountUpdateHistoryManager {
     }
 }
 
-fn get_next_generated_sqid(storage: &mut dyn Storage, env: Env) -> StdResult<String> {
+fn get_next_generated_sqid(storage: &mut dyn Storage, env: &Env) -> StdResult<String> {
     let next_id_u64 = get_next_id_u64_and_advance_sequence(storage)?;
-    let block_time = env.block.time;
+    let block_time = env.block.time.clone();
     let sqids = Sqids::default();
     Ok(sqids.encode(&[next_id_u64, block_time.nanos()]).unwrap())
 }
@@ -258,11 +246,11 @@ mod tests {
         ];
         entries.iter().for_each(|entry| {
             // save + load
-            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, env.clone(), entry.1.clone(), Some(suffix_4_test)).unwrap()
+            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, &env, entry.1.clone(), Some(suffix_4_test)).unwrap()
         });
 
         assert_eq!(
-            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 0, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 0, 2, false, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr.clone(),
@@ -277,7 +265,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 1, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 1, 2, false, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr.clone(),
@@ -324,11 +312,11 @@ mod tests {
         ];
         entries.iter().for_each(|entry| {
             // save + load
-            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, env.clone(), entry.1.clone(), Some(suffix_4_test)).unwrap()
+            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, &env, entry.1.clone(), Some(suffix_4_test)).unwrap()
         });
 
         assert_eq!(
-            UserCountUpdateHistoryManager::get_user_entries_reversed(deps.as_ref().storage, user_addr.clone(), 0, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 0, 2, true, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr.clone(),
@@ -343,7 +331,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            UserCountUpdateHistoryManager::get_user_entries_reversed(deps.as_ref().storage, user_addr.clone(), 1, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_user_entries(deps.as_ref().storage, user_addr.clone(), 1, 2, true, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr.clone(),
@@ -392,11 +380,11 @@ mod tests {
         ];
         entries.iter().for_each(|entry| {
             // save + load
-            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, env.clone(), entry.1.clone(), Some(suffix_4_test)).unwrap()
+            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, &env, entry.1.clone(), Some(suffix_4_test)).unwrap()
         });
 
         assert_eq!(
-            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 0, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 0, 2, false, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr_1.clone(),
@@ -411,7 +399,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 1, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 1, 2, false, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr_3.clone(),
@@ -460,11 +448,11 @@ mod tests {
         ];
         entries.iter().for_each(|entry| {
             // save + load
-            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, env.clone(), entry.1.clone(), Some(suffix_4_test)).unwrap()
+            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, &env, entry.1.clone(), Some(suffix_4_test)).unwrap()
         });
 
         assert_eq!(
-            UserCountUpdateHistoryManager::get_global_entries_reversed(deps.as_ref().storage, 0, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 0, 2, true, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr_3.clone(),
@@ -479,7 +467,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            UserCountUpdateHistoryManager::get_global_entries_reversed(deps.as_ref().storage, 1, 2, Some(suffix_4_test)),
+            UserCountUpdateHistoryManager::get_global_entries(deps.as_ref().storage, 1, 2, true, Some(suffix_4_test)),
             vec![
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr_1.clone(),

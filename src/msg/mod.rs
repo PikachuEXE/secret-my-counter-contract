@@ -49,11 +49,13 @@ pub enum QueryWithPermit {
     UserCountUpdateHistoryEntries {
         page: Option<u32>,
         page_size: Option<u32>,
+        reverse_order: Option<bool>,
     },
 
     GlobalUserCountUpdateHistoryEntries {
         page: Option<u32>,
         page_size: Option<u32>,
+        reverse_order: Option<bool>,
     },
 }
 

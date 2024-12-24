@@ -20,7 +20,7 @@ pub fn try_increment(deps: DepsMut, env: Env, info: MessageInfo, count: Option<i
     user_stats.count_increment_count += 1;
     USER_STATISTIC_DATA_STORE.insert(deps.storage, &info.sender, &user_stats)?;
 
-    UserCountUpdateHistoryManager::add_entry(deps.storage, env.clone(), UserCountUpdateHistoryEntry{
+    UserCountUpdateHistoryManager::add_entry(deps.storage, &env, UserCountUpdateHistoryEntry{
         user_addr: info.sender.clone(),
         count_change,
         created_at: env.block.time.clone(),
