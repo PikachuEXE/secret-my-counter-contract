@@ -150,18 +150,16 @@
 <script setup lang="ts">
 import {
   type TxResponse,
-  type Permit,
 } from "secretjs"
 import type { ComputedRef, Ref } from "@vue/reactivity"
 
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
 const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
 
-const { CONTRACT_ADDRESS } = useAppRuntimeConfig()
-
 const secretClientProxy = useSecretClientProxy()
 
 const transactionStatusStore = useTransactionStatusStore()
+const permits = usePermits()
 
 
 const funcTabsItems = [{
@@ -225,15 +223,6 @@ async function increaseCount() {
   await queryCount()
 }
 
-async function getOwnerPermit(onSuccess: (permit: Permit) => void) {
-  return await secretClientProxy.getPermit({
-    permitName: "owner",
-    allowedContracts: [CONTRACT_ADDRESS],
-    permissions: ["owner"],
-    onSuccess: onSuccess,
-  })
-}
-
 
 type PersonalStats = {
   count_increment_count: number
@@ -242,7 +231,7 @@ const personalStats: Ref<null | PersonalStats> = ref(null)
 const queryPersonalStatsError = ref(null) as Ref<String | null>
 const queryPersonalStatsResultLastUpdatedAt = ref("")
 async function queryPersonalStats() {
-  await getOwnerPermit(async (permit) => {
+  await permits.getOwnerPermit(async (permit) => {
     const queryResult = await secretClientProxy.queryContract({
       with_permit: {
         query: {
@@ -289,7 +278,7 @@ const globalStats: Ref<null | GlobalStats> = ref(null)
 const queryGlobalStatsError = ref(null) as Ref<String | null>
 const queryGlobalStatsResultLastUpdatedAt = ref("")
 async function queryGlobalStats() {
-  await getOwnerPermit(async (permit) => {
+  await permits.getOwnerPermit(async (permit) => {
     const queryResult = await secretClientProxy.queryContract({
       with_permit: {
         query: {
