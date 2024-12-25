@@ -21,6 +21,7 @@ pub enum QueryAnswer {
 
     UserCountUpdateHistoryEntries {
         entries: Vec<UserCountUpdateHistoryEntryInResponse>,
+        total_count: u32,
     },
 }
 

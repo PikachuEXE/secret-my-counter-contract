@@ -3,9 +3,10 @@ use crate::msg::{QueryAnswer, UserCountUpdateHistoryEntryInResponse};
 use crate::state::user_count_update_history::{UserCountUpdateHistoryManager};
 
 pub fn query_user_count_update_history_entries(deps: Deps, viewer: String, page_one_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<QueryAnswer> {
+    let user_addr = deps.api.addr_validate(viewer.as_str())?;
     let entries = UserCountUpdateHistoryManager::get_user_entries(
         deps.storage,
-        deps.api.addr_validate(viewer.as_str())?,
+        user_addr.clone(),
         page_one_based - 1,
         page_size,
         reverse_order,
@@ -16,8 +17,10 @@ pub fn query_user_count_update_history_entries(deps: Deps, viewer: String, page_
         count_change: e.count_change,
         created_at_in_ms: e.created_at.nanos() / 1_000_000,
     }}).collect();
+    let total_count = UserCountUpdateHistoryManager::get_user_entries_total_count(deps.storage, user_addr)?;
     Ok(QueryAnswer::UserCountUpdateHistoryEntries {
         entries: response_entries,
+        total_count,
     })
 }
 
@@ -67,6 +70,7 @@ mod tests {
                     created_at_in_ms: Default::default(),
                 },
             ],
+            total_count: 2,
         });
         assert_eq!(query_user_count_update_history_entries(deps.as_ref(), user_addr.to_string(), 1, 2, true, Some(suffix_4_test))?, QueryAnswer::UserCountUpdateHistoryEntries {
             entries: vec![
@@ -81,10 +85,12 @@ mod tests {
                     created_at_in_ms: Default::default(),
                 },
             ],
+            total_count: 2,
         });
         // Fail query
         assert_eq!(query_user_count_update_history_entries(deps.as_ref(), "not_user_addr".to_string(), 1, 1, false, Some(suffix_4_test))?, QueryAnswer::UserCountUpdateHistoryEntries {
             entries: vec![],
+            total_count: 0,
         });
 
         Ok(())

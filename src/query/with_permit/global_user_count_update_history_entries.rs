@@ -9,8 +9,10 @@ pub fn query_global_user_count_update_history_entries(deps: Deps, page_one_based
         count_change: e.count_change,
         created_at_in_ms: e.created_at.nanos() / 1_000_000,
     }}).collect();
+    let total_count = UserCountUpdateHistoryManager::get_global_entries_total_count(deps.storage, suffix_4_test)?;
     Ok(QueryAnswer::UserCountUpdateHistoryEntries {
         entries: response_entries,
+        total_count,
     })
 }
 
@@ -61,6 +63,7 @@ mod tests {
                     created_at_in_ms: Default::default(),
                 },
             ],
+            total_count: 2,
         });
         assert_eq!(query_global_user_count_update_history_entries(deps.as_ref(), 1, 2, true, Some(suffix_4_test))?, QueryAnswer::UserCountUpdateHistoryEntries {
             entries: vec![
@@ -75,6 +78,7 @@ mod tests {
                     created_at_in_ms: Default::default(),
                 },
             ],
+            total_count: 2,
         });
 
         Ok(())

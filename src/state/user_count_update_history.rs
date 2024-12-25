@@ -55,6 +55,15 @@ impl UserCountUpdateHistoryManager {
         };
         items.unwrap().iter().map(|t| t.1.clone()).collect()
     }
+    pub fn get_global_entries_total_count<'a>(storage: &dyn Storage, suffix_4_test: Option<&[u8]>) -> StdResult<u32> {
+        let store = if let Some(suffix) = suffix_4_test {
+            &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
+        } else {
+            &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
+        };
+
+        store.get_len(storage)
+    }
     pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
         let store = if let Some(suffix) = suffix_4_test {
             &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
@@ -72,6 +81,11 @@ impl UserCountUpdateHistoryManager {
         items.unwrap().iter().
             map(|id| store.get(storage, id).unwrap()).
             collect::<Vec<UserCountUpdateHistoryEntry>>()
+    }
+    pub fn get_user_entries_total_count(storage: &dyn Storage, user_addr: Addr) -> StdResult<u32> {
+        let user_addr_index = UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr);
+
+        user_addr_index.get_len(storage)
     }
 
     fn get_user_addr_specific_index<'a>(user_addr: Addr) -> Keyset<'a, String> {
@@ -213,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_user_entries() -> StdResult<()> {
+    fn test_get_user_entries_and_count() -> StdResult<()> {
         let mut deps = mock_dependencies();
         let env = mock_env();
         let suffix_4_test_str = nanoid!();
@@ -273,6 +287,12 @@ mod tests {
                     created_at: Default::default(),
                 },
             ],
+        );
+
+        // Count
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_user_entries_total_count(deps.as_ref().storage, user_addr.clone())?,
+            3,
         );
 
         Ok(())
@@ -345,7 +365,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_global_entries() -> StdResult<()> {
+    fn test_get_global_entries_and_count() -> StdResult<()> {
         let mut deps = mock_dependencies();
         let env = mock_env();
         let suffix_4_test_str = nanoid!();
@@ -407,6 +427,12 @@ mod tests {
                     created_at: Default::default(),
                 },
             ],
+        );
+
+        // Count
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_global_entries_total_count(deps.as_ref().storage, Some(suffix_4_test))?,
+            3,
         );
 
         Ok(())
