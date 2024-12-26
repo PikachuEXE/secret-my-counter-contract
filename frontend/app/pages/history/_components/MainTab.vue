@@ -17,9 +17,9 @@
           :items="queryUserCountUpdateHistoryEntriesResultItems"
         >
           <template #result>
-            <div v-if="userCountUpdateHistoryEntries == null">
+            <div v-if="shownUserCountUpdateHistoryEntries == null">
             </div>
-            <div v-else-if="userCountUpdateHistoryEntries?.length === 0">
+            <div v-else-if="shownUserCountUpdateHistoryEntries?.length === 0">
               Empty
             </div>
             <div class="space-y-4" v-else>
@@ -52,7 +52,7 @@
               </div>
 
               <div class="entry-list">
-                <template v-for="(e, index) in userCountUpdateHistoryEntries">
+                <template v-for="(e, index) in shownUserCountUpdateHistoryEntries">
                   <div
                     class="p-2"
                   >
@@ -64,7 +64,7 @@
                       <NuxtTime :datetime="e.created_at_in_ms" relative /> ({{ new Date(e.created_at_in_ms).toISOString() }})
                     </p>
                   </div>
-                  <UDivider v-if="index < userCountUpdateHistoryEntries.length - 1" />
+                  <UDivider v-if="index < shownUserCountUpdateHistoryEntries.length - 1" />
                 </template>
               </div>
 
@@ -109,6 +109,7 @@ import { useOffsetPagination } from "@vueuse/core"
 
 import { type UserCountUpdateHistoryEntry } from "../types"
 
+const connectedWalletStore = useConnectedWalletStore()
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
 const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
 
@@ -117,16 +118,24 @@ const secretClientProxy = useSecretClientProxy()
 const permits = usePermits()
 
 
-const userCountUpdateHistoryEntries: Ref<null | UserCountUpdateHistoryEntry[]> = ref(null)
+const shownUserCountUpdateHistoryEntries: Ref<null | UserCountUpdateHistoryEntry[]> = ref(null)
+const shownUserCountUpdateHistoryEntriesTotalCount = ref(0)
 const queryUserCountUpdateHistoryEntriesError = ref(null) as Ref<String | null>
 const queryUserCountUpdateHistoryEntriesResultLastUpdatedAt = ref("")
-
-
-const shownUserCountUpdateHistoryEntries: Ref<UserCountUpdateHistoryEntry[]> = ref([])
-const shownUserCountUpdateHistoryEntriesTotalCount = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+function resetState(): void {
+  shownUserCountUpdateHistoryEntries.value = null
+  shownUserCountUpdateHistoryEntriesTotalCount.value = 0
+  queryUserCountUpdateHistoryEntriesError.value = null
+  queryUserCountUpdateHistoryEntriesResultLastUpdatedAt.value = ""
+  page.value = 1
+  pageSize.value = 10
+}
+useConnectedWalletEventListener().onWalletDisconnected(resetState)
 function fetchData({ currentPage, currentPageSize }: { currentPage: number, currentPageSize: number }) {
+  if (!connectedWalletStore.isWalletConnected) { return }
+
   fetch(currentPage, currentPageSize)
 }
 async function fetch(page: number, pageSize: number) {
@@ -156,7 +165,7 @@ async function fetch(page: number, pageSize: number) {
       return
     }
 
-    userCountUpdateHistoryEntries.value = queryResult.user_count_update_history_entries.entries
+    shownUserCountUpdateHistoryEntries.value = queryResult.user_count_update_history_entries.entries
     shownUserCountUpdateHistoryEntriesTotalCount.value = queryResult.user_count_update_history_entries.total_count
     queryUserCountUpdateHistoryEntriesError.value = null
     queryUserCountUpdateHistoryEntriesResultLastUpdatedAt.value = Date.now().toString()
@@ -182,8 +191,8 @@ const queryUserCountUpdateHistoryEntriesResultItems: ComputedRef<Array<any>> = c
     {
       label: "Result",
       slot: "result",
-      defaultOpen: userCountUpdateHistoryEntries.value !== null,
-      disabled: userCountUpdateHistoryEntries.value === null,
+      defaultOpen: shownUserCountUpdateHistoryEntries.value !== null,
+      disabled: shownUserCountUpdateHistoryEntries.value === null,
     },
     {
       label: "Error",

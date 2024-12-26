@@ -7,7 +7,6 @@ import type {
   Keplr,
   OfflineDirectSigner,
 } from "@keplr-wallet/types"
-import { useAppRuntimeConfig } from "~/composables/useAppRuntimeConfig";
 
 declare global {
   interface Window {

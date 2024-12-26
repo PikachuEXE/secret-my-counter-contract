@@ -153,6 +153,7 @@ import {
 } from "secretjs"
 import type { ComputedRef, Ref } from "@vue/reactivity"
 
+const connectedWalletEventListener = useConnectedWalletEventListener()
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
 const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
 
@@ -176,6 +177,11 @@ const funcTabsItems = [{
 const count = ref(null) as Ref<number | null>
 const queryCountError = ref(null) as Ref<String | null>
 const queryResultLastUpdatedAt = ref("")
+connectedWalletEventListener.onWalletDisconnected(() => {
+  count.value = null
+  queryCountError.value = null
+  queryResultLastUpdatedAt.value = ""
+})
 
 async function queryCount() {
   const queryResult = await secretClientProxy.queryContract({
@@ -213,6 +219,10 @@ const queryResultItems: ComputedRef<Array<any>> = computed(() => {
 
 const countIncreaseAmount = ref(1)
 const lastCountIncreaseTxResponse: Ref<null | TxResponse> = ref(null)
+connectedWalletEventListener.onWalletDisconnected(() => {
+  countIncreaseAmount.value = 1
+  lastCountIncreaseTxResponse.value = null
+})
 async function increaseCount() {
   await secretClientProxy.executeContract({
     msg: { increment: { count: countIncreaseAmount.value } },
@@ -230,6 +240,11 @@ type PersonalStats = {
 const personalStats: Ref<null | PersonalStats> = ref(null)
 const queryPersonalStatsError = ref(null) as Ref<String | null>
 const queryPersonalStatsResultLastUpdatedAt = ref("")
+connectedWalletEventListener.onWalletDisconnected(() => {
+  personalStats.value = null
+  queryPersonalStatsError.value = null
+  queryPersonalStatsResultLastUpdatedAt.value = ""
+})
 async function queryPersonalStats() {
   await permits.getOwnerPermit(async (permit) => {
     const queryResult = await secretClientProxy.queryContract({
@@ -277,6 +292,11 @@ type GlobalStats = {
 const globalStats: Ref<null | GlobalStats> = ref(null)
 const queryGlobalStatsError = ref(null) as Ref<String | null>
 const queryGlobalStatsResultLastUpdatedAt = ref("")
+connectedWalletEventListener.onWalletDisconnected(() => {
+  globalStats.value = null
+  queryGlobalStatsError.value = null
+  queryGlobalStatsResultLastUpdatedAt.value = ""
+})
 async function queryGlobalStats() {
   await permits.getOwnerPermit(async (permit) => {
     const queryResult = await secretClientProxy.queryContract({
@@ -319,6 +339,10 @@ const queryGlobalStatsResultItems: ComputedRef<Array<any>> = computed(() => {
 
 const countResetValue = ref(0)
 const lastCountResetTxResponse: Ref<null | TxResponse> = ref(null)
+connectedWalletEventListener.onWalletDisconnected(() => {
+  countResetValue.value = 0
+  lastCountResetTxResponse.value = null
+})
 async function resetCount() {
   await secretClientProxy.executeContract({
     msg: { reset: { count: countResetValue.value } },

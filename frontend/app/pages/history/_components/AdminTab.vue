@@ -112,6 +112,7 @@ import { useOffsetPagination } from "@vueuse/core"
 
 import { type UserCountUpdateHistoryEntry } from "../types"
 
+const connectedWalletStore = useConnectedWalletStore()
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
 const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
 
@@ -129,7 +130,20 @@ const shownUserCountUpdateHistoryEntries: Ref<UserCountUpdateHistoryEntry[]> = r
 const shownUserCountUpdateHistoryEntriesTotalCount = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+function resetState(): void {
+  userCountUpdateHistoryEntries.value = null
+  queryUserCountUpdateHistoryEntriesError.value = null
+  queryUserCountUpdateHistoryEntriesResultLastUpdatedAt.value = ""
+
+  shownUserCountUpdateHistoryEntries.value = []
+  shownUserCountUpdateHistoryEntriesTotalCount.value = 0
+  page.value = 1
+  pageSize.value = 10
+}
+useConnectedWalletEventListener().onWalletDisconnected(resetState)
 function fetchData({ currentPage, currentPageSize }: { currentPage: number, currentPageSize: number }) {
+  if (!connectedWalletStore.isWalletConnected) { return }
+
   fetch(currentPage, currentPageSize)
 }
 async function fetch(page: number, pageSize: number) {
