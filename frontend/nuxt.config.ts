@@ -18,6 +18,10 @@ export default defineNuxtConfig({
   },
 
   pages: true,
+  ignore: [
+    // Ignores stuff with `_` prefix, e.g. page specific components
+    'pages/**/_*',
+  ],
 
   vite: {
     vue: {
