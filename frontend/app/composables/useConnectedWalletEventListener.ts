@@ -2,11 +2,15 @@
 type callbackFunc = () => void
 
 export const useConnectedWalletEventListener = createSharedComposable(() => {
+  const walletConnectFallbacks: callbackFunc[] = []
   const walletDisconnectFallbacks: callbackFunc[] = []
 
   const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
   const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
 
+  function runWalletConnectFallbacks() {
+    walletConnectFallbacks.forEach((f) => f())
+  }
   function runWalletDisconnectFallbacks() {
     walletDisconnectFallbacks.forEach((f) => f())
   }
@@ -15,6 +19,9 @@ export const useConnectedWalletEventListener = createSharedComposable(() => {
     if (newValue == null) {
       // Disconnected
       runWalletDisconnectFallbacks()
+    }
+    else {
+      runWalletConnectFallbacks()
     }
   })
 
@@ -26,11 +33,15 @@ export const useConnectedWalletEventListener = createSharedComposable(() => {
     })
   }
 
+  function onWalletConnected(func: callbackFunc): void {
+    walletConnectFallbacks.push(func)
+  }
   function onWalletDisconnected(func: callbackFunc): void {
     walletDisconnectFallbacks.push(func)
   }
 
   return {
+    onWalletConnected,
     onWalletDisconnected,
   }
 })

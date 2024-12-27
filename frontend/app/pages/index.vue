@@ -182,7 +182,7 @@ connectedWalletEventListener.onWalletDisconnected(() => {
   queryCountError.value = null
   queryResultLastUpdatedAt.value = ""
 })
-
+connectedWalletEventListener.onWalletConnected(queryCount)
 async function queryCount() {
   const queryResult = await secretClientProxy.queryContract({
     get_count: {},
