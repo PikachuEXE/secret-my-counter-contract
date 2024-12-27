@@ -3,7 +3,7 @@
   <UContainer class="pt-10">
     <NuxtPage />
   </UContainer>
-  <UNotificationStaticContainer>
+  <UNotificationStaticContainer v-if="transactionStatusStore.transactionInProgress">
     <UNotificationWithProgress
       v-if="transactionStatusStore.transactionInProgress"
       id="notification-transactionInProgress"

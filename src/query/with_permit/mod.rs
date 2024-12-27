@@ -7,6 +7,8 @@ use crate::state::CONFIG;
 
 mod user_statistic_data;
 mod global_statistic_data;
+mod user_count_update_history_entries;
+mod global_user_count_update_history_entries;
 
 /// Returns QueryResult from validating a permit and then using its creator's address when
 /// performing the specified query
@@ -44,6 +46,27 @@ pub fn permit_query_dispatch(
             }
 
             global_statistic_data::query_global_statistic_data(deps, viewer, None)?
+        }
+
+        QueryWithPermit::UserCountUpdateHistoryEntries {page, page_size, reverse_order} => {
+            let page_w_fallback = page.unwrap_or(1);
+            let valid_page_one_based = if page_w_fallback < 1 { 1 } else { page_w_fallback };
+            let page_size_w_fallback = page_size.unwrap_or(10);
+            let valid_page_size = if (1..101).contains(&page_size_w_fallback) { page_size_w_fallback } else { 1 };
+            user_count_update_history_entries::query_user_count_update_history_entries(deps, viewer, valid_page_one_based, valid_page_size, reverse_order.unwrap_or(false), None)?
+        }
+
+        QueryWithPermit::GlobalUserCountUpdateHistoryEntries {page, page_size, reverse_order} => {
+            // Only contract manager can check
+            if config.contract_manager != viewer {
+                return Err(StdError::generic_err("unauthorized"));
+            }
+
+            let page_w_fallback = page.unwrap_or(1);
+            let valid_page_one_based = if page_w_fallback < 1 { 1 } else { page_w_fallback };
+            let page_size_w_fallback = page_size.unwrap_or(10);
+            let valid_page_size = if (1..101).contains(&page_size_w_fallback) { page_size_w_fallback } else { 1 };
+            global_user_count_update_history_entries::query_global_user_count_update_history_entries(deps, valid_page_one_based, valid_page_size, reverse_order.unwrap_or(false), None)?
         }
     };
 

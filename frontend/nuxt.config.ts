@@ -10,11 +10,18 @@ export default defineNuxtConfig({
     "pinia-plugin-persistedstate/nuxt",
     "@nuxt/icon",
     "@vueuse/nuxt",
+    "nuxt-time",
   ],
 
   colorMode: {
     preference: 'dark',
   },
+
+  pages: true,
+  ignore: [
+    // Ignores stuff with `_` prefix, e.g. page specific components
+    'pages/**/_*',
+  ],
 
   vite: {
     vue: {

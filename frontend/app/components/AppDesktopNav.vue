@@ -140,6 +140,11 @@ const links = [
     icon: 'i-mdi-home',
     to: '/',
   },
+  {
+    label: 'History',
+    icon: 'i-mdi-history',
+    to: '/history',
+  },
 ]
 
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()

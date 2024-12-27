@@ -7,7 +7,6 @@ import type {
   Keplr,
   OfflineDirectSigner,
 } from "@keplr-wallet/types"
-import { useAppRuntimeConfig } from "~/composables/useAppRuntimeConfig";
 
 declare global {
   interface Window {
@@ -63,7 +62,6 @@ export const useConnectedWalletAndClientStore = defineStore("connectedWalletAndC
       if (!state.keplrAccount) { return "" }
 
       // `secret1` = 7, plus 4 chars
-      console.log('address', state.keplrAccount.address)
       const address = state.keplrAccount.address
       const start = address.substring(0, 7 + 4 - 1)
       const end = address.substring(address.length - 1 - 4, address.length - 1)
@@ -71,7 +69,7 @@ export const useConnectedWalletAndClientStore = defineStore("connectedWalletAndC
     },
   },
   actions: {
-    async connectKeplr() {
+    async connectKeplr(reconnecting = false) {
       const runtimeConfig = useRuntimeConfig()
       // Should be dev/testnet only
       const SHOULD_SUGGEST_CUSTOM_CHAIN = runtimeConfig.public.shouldSuggestCustomChain.toString() === 'true'
@@ -144,6 +142,10 @@ export const useConnectedWalletAndClientStore = defineStore("connectedWalletAndC
       this.keplrAccount = accounts[0]
       const connectedWalletStore = useConnectedWalletStore()
       connectedWalletStore.setConnectedWalletTypeAsKeplr()
+      if (reconnecting) {
+        const permitStore = usePermitStore()
+        permitStore.clearAll()
+      }
     },
     disconnectKeplr() {
       const connectedWalletStore = useConnectedWalletStore()

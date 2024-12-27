@@ -10,6 +10,9 @@ export const useConnectedWalletStore = defineStore("connectedWallet", {
     connectedWalletTypeUpdatedAtUnixMs: 0,
   }),
   getters: {
+    isWalletConnected: (state) => {
+      return state.connectedWalletType != null
+    },
     connectedWalletIsKeplr: (state) => {
       return state.connectedWalletType === CollectedWalletType.Keplr
     },
@@ -21,7 +24,7 @@ export const useConnectedWalletStore = defineStore("connectedWallet", {
     },
     resetConnectedWalletType() {
       this.connectedWalletType = null
-    }
+    },
   },
   persist: true,
 })

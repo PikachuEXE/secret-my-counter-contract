@@ -150,18 +150,17 @@
 <script setup lang="ts">
 import {
   type TxResponse,
-  type Permit,
 } from "secretjs"
 import type { ComputedRef, Ref } from "@vue/reactivity"
 
+const connectedWalletEventListener = useConnectedWalletEventListener()
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
 const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
-
-const { CONTRACT_ADDRESS } = useAppRuntimeConfig()
 
 const secretClientProxy = useSecretClientProxy()
 
 const transactionStatusStore = useTransactionStatusStore()
+const permits = usePermits()
 
 
 const funcTabsItems = [{
@@ -178,6 +177,11 @@ const funcTabsItems = [{
 const count = ref(null) as Ref<number | null>
 const queryCountError = ref(null) as Ref<String | null>
 const queryResultLastUpdatedAt = ref("")
+connectedWalletEventListener.onWalletDisconnected(() => {
+  count.value = null
+  queryCountError.value = null
+  queryResultLastUpdatedAt.value = ""
+})
 
 async function queryCount() {
   const queryResult = await secretClientProxy.queryContract({
@@ -215,6 +219,10 @@ const queryResultItems: ComputedRef<Array<any>> = computed(() => {
 
 const countIncreaseAmount = ref(1)
 const lastCountIncreaseTxResponse: Ref<null | TxResponse> = ref(null)
+connectedWalletEventListener.onWalletDisconnected(() => {
+  countIncreaseAmount.value = 1
+  lastCountIncreaseTxResponse.value = null
+})
 async function increaseCount() {
   await secretClientProxy.executeContract({
     msg: { increment: { count: countIncreaseAmount.value } },
@@ -225,15 +233,6 @@ async function increaseCount() {
   await queryCount()
 }
 
-async function getOwnerPermit(onSuccess: (permit: Permit) => void) {
-  return await secretClientProxy.getPermit({
-    permitName: "owner",
-    allowedContracts: [CONTRACT_ADDRESS],
-    permissions: ["owner"],
-    onSuccess: onSuccess,
-  })
-}
-
 
 type PersonalStats = {
   count_increment_count: number
@@ -241,8 +240,13 @@ type PersonalStats = {
 const personalStats: Ref<null | PersonalStats> = ref(null)
 const queryPersonalStatsError = ref(null) as Ref<String | null>
 const queryPersonalStatsResultLastUpdatedAt = ref("")
+connectedWalletEventListener.onWalletDisconnected(() => {
+  personalStats.value = null
+  queryPersonalStatsError.value = null
+  queryPersonalStatsResultLastUpdatedAt.value = ""
+})
 async function queryPersonalStats() {
-  await getOwnerPermit(async (permit) => {
+  await permits.getOwnerPermit(async (permit) => {
     const queryResult = await secretClientProxy.queryContract({
       with_permit: {
         query: {
@@ -288,8 +292,13 @@ type GlobalStats = {
 const globalStats: Ref<null | GlobalStats> = ref(null)
 const queryGlobalStatsError = ref(null) as Ref<String | null>
 const queryGlobalStatsResultLastUpdatedAt = ref("")
+connectedWalletEventListener.onWalletDisconnected(() => {
+  globalStats.value = null
+  queryGlobalStatsError.value = null
+  queryGlobalStatsResultLastUpdatedAt.value = ""
+})
 async function queryGlobalStats() {
-  await getOwnerPermit(async (permit) => {
+  await permits.getOwnerPermit(async (permit) => {
     const queryResult = await secretClientProxy.queryContract({
       with_permit: {
         query: {
@@ -330,6 +339,10 @@ const queryGlobalStatsResultItems: ComputedRef<Array<any>> = computed(() => {
 
 const countResetValue = ref(0)
 const lastCountResetTxResponse: Ref<null | TxResponse> = ref(null)
+connectedWalletEventListener.onWalletDisconnected(() => {
+  countResetValue.value = 0
+  lastCountResetTxResponse.value = null
+})
 async function resetCount() {
   await secretClientProxy.executeContract({
     msg: { reset: { count: countResetValue.value } },
@@ -340,10 +353,3 @@ async function resetCount() {
   await queryCount()
 }
 </script>
-
-<style scoped>
-/* Don't fire event on disabled whatever */
-.disabled {
-  pointer-events: none;
-}
-</style>

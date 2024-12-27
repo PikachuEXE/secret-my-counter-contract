@@ -1,15 +1,17 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult};
 use crate::state::{STATE};
 use crate::state::user_statistic_data::{ USER_STATISTIC_DATA_STORE};
+use crate::state::user_count_update_history::{UserCountUpdateHistoryManager, UserCountUpdateHistoryEntry};
 
-pub fn try_increment(deps: DepsMut, _env: Env, info: MessageInfo, count: Option<i32>) -> StdResult<Response> {
+pub fn try_increment(deps: DepsMut, env: Env, info: MessageInfo, count: Option<i32>) -> StdResult<Response> {
     let mut state = STATE.load(deps.storage)?;
-    if count.is_some() {
-        state.count += count.unwrap();
+    let count_change = if count.is_some() {
+        count.unwrap()
     }
     else {
-        state.count += 1;
-    }
+        1
+    };
+    state.count += count_change;
     state.count_increment_count += 1;
 
     STATE.save(deps.storage, &state)?;
@@ -17,6 +19,12 @@ pub fn try_increment(deps: DepsMut, _env: Env, info: MessageInfo, count: Option<
     let mut user_stats = USER_STATISTIC_DATA_STORE.get(deps.storage, &info.sender).unwrap_or_default();
     user_stats.count_increment_count += 1;
     USER_STATISTIC_DATA_STORE.insert(deps.storage, &info.sender, &user_stats)?;
+
+    UserCountUpdateHistoryManager::add_entry(deps.storage, &env, UserCountUpdateHistoryEntry{
+        user_addr: info.sender.clone(),
+        count_change,
+        created_at: env.block.time.clone(),
+    }, None)?;
 
     deps.api.debug("count incremented successfully");
     Ok(Response::default())

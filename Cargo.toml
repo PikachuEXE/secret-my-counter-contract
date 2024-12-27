@@ -34,6 +34,7 @@ cosmwasm-schema = "2.1.4"
 
 # Uncomment these for some common extra tools
 secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.10.1", default-features = false, features = ["storage", "permit", "utils", "crypto"] }
+sqids = "0.4.2"
 # cw-storage-plus = { version = "1.0.1", default-features = false }
 
 # [patch.crates-io]
@@ -42,6 +43,7 @@ secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0
 
 [dev-dependencies]
 rand = { version = "0.8" }
+nanoid = "0.4"
 
 [[bin]]
 name = "schema"

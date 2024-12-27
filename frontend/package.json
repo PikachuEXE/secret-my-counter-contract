@@ -20,15 +20,17 @@
     "secretjs": "^1.15.0-beta.1"
   },
   "devDependencies": {
+    "@iconify-json/mdi": "^1.2.2",
     "@iconify/vue": "^4.2.0",
     "@keplr-wallet/types": "^0.12.160",
-    "@nuxt/devtools": "latest",
+    "@nuxt/devtools": "^1.6.4",
     "@nuxt/icon": "1.10.1",
     "@nuxt/ui": "^2.20.0",
     "@unocss/nuxt": "^0.65.1",
     "@vueuse/core": "^12.0.0",
     "@vueuse/nuxt": "^12.0.0",
-    "nuxt": "^3.14.1592",
+    "nuxt": "~3.14.1592",
+    "nuxt-time": "1.0.3",
     "sass-embedded": "^1.83.0",
     "unocss": "^0.65.1"
   },
