@@ -69,7 +69,7 @@ export const useConnectedWalletAndClientStore = defineStore("connectedWalletAndC
     },
   },
   actions: {
-    async connectKeplr() {
+    async connectKeplr(reconnecting = false) {
       const runtimeConfig = useRuntimeConfig()
       // Should be dev/testnet only
       const SHOULD_SUGGEST_CUSTOM_CHAIN = runtimeConfig.public.shouldSuggestCustomChain.toString() === 'true'
@@ -142,6 +142,10 @@ export const useConnectedWalletAndClientStore = defineStore("connectedWalletAndC
       this.keplrAccount = accounts[0]
       const connectedWalletStore = useConnectedWalletStore()
       connectedWalletStore.setConnectedWalletTypeAsKeplr()
+      if (reconnecting) {
+        const permitStore = usePermitStore()
+        permitStore.clearAll()
+      }
     },
     disconnectKeplr() {
       const connectedWalletStore = useConnectedWalletStore()
