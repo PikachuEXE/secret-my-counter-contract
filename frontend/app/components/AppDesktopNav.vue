@@ -1,6 +1,23 @@
 
 <template>
   <nav :class="ui.wrapper" v-bind="attrs">
+    <div class="nav-header space-y-2">
+      <UBadge
+        label="Just a Counter"
+        icon="i-mdi-numeric"
+        trailing
+        size="lg"
+        color="primary"
+        class="w-full text-center"
+      />
+      <UBadge
+        :label="`Chain: ${runtimeConfig.public.secretChainName}`"
+        block
+        size="xs"
+        color="primary"
+        variant="soft"
+      />
+    </div>
     <ul v-for="(section, sectionIndex) of sections" :key="`section${sectionIndex}`">
       <li v-for="(link, index) of section" :key="`section${sectionIndex}-${index}`">
         <ULink
@@ -111,7 +128,9 @@ import type { VerticalNavigationLink, Strategy, DeepPartial } from '#ui/types'
 // @ts-expect-error
 import appConfig from '#build/app.config'
 import { verticalNavigation } from '#ui/ui.config'
-import { storeToRefs } from "pinia";
+import { storeToRefs } from "pinia"
+
+const runtimeConfig = useRuntimeConfig()
 
 const config = mergeConfig<typeof verticalNavigation>(appConfig.ui.strategy, appConfig.ui.verticalNavigation, verticalNavigation)
 
@@ -167,6 +186,11 @@ nav {
   width: 100%;
   max-width: 250px;
   height: 100%;
+}
+.nav-header {
+  border-bottom: 1px solid rgba(228,228,228,.1);
+  margin-bottom: 20px;
+  padding-bottom: 20px;
 }
 .nav-footer {
   border-top: 1px solid rgba(228,228,228,.1);
