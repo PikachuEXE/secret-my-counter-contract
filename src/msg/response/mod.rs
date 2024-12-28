@@ -25,6 +25,12 @@ pub enum QueryAnswer {
     },
 }
 
+// We define a custom struct for each query response
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct PrivilegesResponse {
+    pub is_contract_manager: bool,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct UserCountUpdateHistoryEntryInResponse {
     pub user_addr: Addr,

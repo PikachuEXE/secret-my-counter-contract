@@ -161,17 +161,25 @@ const secretClientProxy = useSecretClientProxy()
 
 const transactionStatusStore = useTransactionStatusStore()
 const permits = usePermits()
+const connectedWalletPrivileges = storeToRefs(useConnectedWalletPrivileges())
+const { isContractManager } = storeToRefs(connectedWalletPrivileges)
 
 
-const funcTabsItems = [{
-  slot: 'main',
-  label: 'Main',
-  icon: 'i-heroicons-information-circle',
-}, {
-  slot: 'admin',
-  label: 'Admin',
-  icon: 'i-carbon-operations-field',
-}]
+const funcTabsItems = computed(() => {
+  return [
+    {
+      slot: 'main',
+      label: 'Main',
+      icon: 'i-heroicons-information-circle',
+    },
+    ...(isContractManager.value ? [{
+      slot: 'admin',
+      label: 'Admin',
+      icon: 'i-carbon-operations-field',
+    }]
+    : []),
+  ]
+})
 
 
 const count = ref(null) as Ref<number | null>

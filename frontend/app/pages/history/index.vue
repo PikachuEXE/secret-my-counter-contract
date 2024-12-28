@@ -13,14 +13,24 @@
 import MainTab from "./_components/MainTab.vue"
 import AdminTab from "./_components/AdminTab.vue"
 
-const funcTabsItems = [{
-  slot: 'main',
-  label: 'Main',
-  icon: 'i-heroicons-information-circle',
-}, {
-  slot: 'admin',
-  label: 'Admin',
-  icon: 'i-carbon-operations-field',
-}]
+const connectedWalletPrivileges = storeToRefs(useConnectedWalletPrivileges())
+const { isContractManager } = storeToRefs(connectedWalletPrivileges)
+
+
+const funcTabsItems = computed(() => {
+  return [
+    {
+      slot: 'main',
+      label: 'Main',
+      icon: 'i-heroicons-information-circle',
+    },
+    ...(isContractManager.value ? [{
+        slot: 'admin',
+        label: 'Admin',
+        icon: 'i-carbon-operations-field',
+      }]
+      : []),
+  ]
+})
 
 </script>

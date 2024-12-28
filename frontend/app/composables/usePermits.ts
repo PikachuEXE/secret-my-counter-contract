@@ -1,4 +1,4 @@
-import type { Permit } from "secretjs";
+import type { Permit } from "secretjs"
 
 export const usePermits = () => {
   async function getOwnerPermit(onSuccess: (permit: Permit) => void) {

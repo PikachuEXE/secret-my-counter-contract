@@ -33,6 +33,9 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     GetCount {},
+    GetPrivileges {
+        wallet_address: String,
+    },
     WithPermit {
         permit: Permit,
         query: QueryWithPermit,
