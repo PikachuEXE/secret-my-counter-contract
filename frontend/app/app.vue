@@ -1,8 +1,10 @@
 <template>
   <AppDesktopNav />
-  <UContainer class="pt-10">
-    <NuxtPage />
-  </UContainer>
+  <main>
+    <UContainer class="pt-10">
+      <NuxtPage />
+    </UContainer>
+  </main>
   <UNotificationStaticContainer v-if="transactionStatusStore.transactionInProgress">
     <UNotificationWithProgress
       v-if="transactionStatusStore.transactionInProgress"
@@ -44,5 +46,10 @@ connectedWalletAndClientStore.tryAutoConnectKeplrSometimes()
 /* Don't fire event on disabled whatever */
 .disabled {
   pointer-events: none;
+}
+
+main {
+  margin-left: 250px;
+  width: calc(100% - 250px);
 }
 </style>
