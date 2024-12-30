@@ -1,6 +1,16 @@
-on: [push, pull_request]
-
 name: Static Checks
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'frontend/**'
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'frontend/**'
 
 jobs:
   tests:
