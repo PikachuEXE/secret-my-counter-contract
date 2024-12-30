@@ -86,6 +86,8 @@ export const useConnectedWalletAndClientStore = defineStore("connectedWalletAndC
       }
 
       const appRuntimeConfig = useAppRuntimeConfig()
+      console.log('runtimeConfig', runtimeConfig)
+      console.log('SHOULD_SUGGEST_CUSTOM_CHAIN', SHOULD_SUGGEST_CUSTOM_CHAIN)
       if (SHOULD_SUGGEST_CUSTOM_CHAIN) {
         await keplr!.experimentalSuggestChain({
           chainId: appRuntimeConfig.SECRET_CHAIN_ID,
