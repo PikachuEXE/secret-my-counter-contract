@@ -154,16 +154,26 @@ const { ui, attrs } = useUI('verticalNavigation', toRef(props, 'ui'), config, to
 const sections = computed(() => (Array.isArray(links[0]) ? links : [links]) as VerticalNavigationLink[][])
 
 const links = [
-  {
-    label: 'Home',
-    icon: 'i-mdi-home',
-    to: '/',
-  },
-  {
-    label: 'History',
-    icon: 'i-mdi-history',
-    to: '/history',
-  },
+  [
+    {
+      label: 'Home',
+      icon: 'i-mdi-home',
+      to: '/',
+    },
+    {
+      label: 'History',
+      icon: 'i-mdi-history',
+      to: '/history',
+    },
+  ],
+  [
+    {
+      label: 'GitHub',
+      icon: 'i-mdi-github',
+      target: '_blank',
+      to: 'https://github.com/PikachuEXE/secret-my-counter-contract',
+    },
+  ],
 ]
 
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
