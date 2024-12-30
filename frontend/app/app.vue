@@ -13,7 +13,7 @@
       :close-button="false"
     />
   </UNotificationStaticContainer>
-  <UNotifications />
+  <UNotifications class="sm:w-sm" />
 </template>
 
 <script setup lang="ts">
