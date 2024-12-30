@@ -48,23 +48,23 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // NUXT_PUBLIC_CONTRACT_ADDRESS
-      contractAddress: '',
+      contractAddress: process.env.NUXT_PUBLIC_CONTRACT_ADDRESS || '',
       // NUXT_PUBLIC_SECRET_NODE_RPC
-      secretNodeRpc: '',
+      secretNodeRpc: process.env.NUXT_PUBLIC_SECRET_NODE_RPC || '',
       // NUXT_PUBLIC_SECRET_NODE_REST
-      secretNodeRest: '',
+      secretNodeRest: process.env.NUXT_PUBLIC_SECRET_NODE_REST || '',
       // NUXT_PUBLIC_SECRET_CHAIN_ID
-      secretChainId: '',
+      secretChainId: process.env.NUXT_PUBLIC_SECRET_CHAIN_ID || '',
       // NUXT_PUBLIC_SECRET_SHOULD_SUGGEST_CUSTOM_CHAIN
       // Mainly for dev/testnet
-      shouldSuggestCustomChain: 'false',
+      shouldSuggestCustomChain: process.env.NUXT_PUBLIC_SECRET_SHOULD_SUGGEST_CUSTOM_CHAIN || 'false',
       // NUXT_PUBLIC_SECRET_CHAIN_NAME
       // Mainly for dev/testnet, purely for display
-      secretChainName: 'Unknown Secret Chain',
+      secretChainName: process.env.NUXT_PUBLIC_SECRET_CHAIN_NAME || 'Unknown Secret Chain',
 
       // NUXT_PUBLIC_PERMIT_VALID_START_TIME_UNIX_MS
       // Permit before this time will be considered as invalid
-      permitValidStartTimeUnixMs: 0,
+      permitValidStartTimeUnixMs: process.env.NUXT_PUBLIC_PERMIT_VALID_START_TIME_UNIX_MS ? parseInt(process.env.NUXT_PUBLIC_PERMIT_VALID_START_TIME_UNIX_MS) : 0,
     }
   },
 })
