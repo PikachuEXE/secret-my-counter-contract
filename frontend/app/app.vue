@@ -19,6 +19,12 @@
 </template>
 
 <script setup lang="ts">
+const runtimeConfig = useRuntimeConfig()
+
+useHead({
+  title: `Just a Counter (${runtimeConfig.public.secretChainName})`,
+})
+
 import { storeToRefs } from 'pinia'
 const transactionStatusStore = useTransactionStatusStore()
 const { latestTransactionError } = storeToRefs(transactionStatusStore)
