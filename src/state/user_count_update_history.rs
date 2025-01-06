@@ -20,6 +20,7 @@ pub struct UserCountUpdateHistoryEntry {
     pub user_addr: Addr,
     pub count_change: i32,
     pub created_at: Timestamp,
+    pub marked_as_public_at: Option<Timestamp>,
 }
 
 #[derive(Default)]
@@ -131,11 +132,13 @@ mod tests {
             user_addr: user_addr.clone(),
             count_change: 1,
             created_at: Default::default(),
+            marked_as_public_at: None,
         }).is_ok());
         assert_eq!(store.get(deps.as_ref().storage, &key.clone()), Some(UserCountUpdateHistoryEntry{
             user_addr: user_addr.clone(),
             count_change: 1,
             created_at: Default::default(),
+            marked_as_public_at: None,
         }));
         // update
         let mut state = store.get(deps.as_ref().storage, &key.clone()).unwrap();
@@ -145,6 +148,7 @@ mod tests {
             user_addr: user_addr.clone(),
             count_change: 3,
             created_at: Default::default(),
+            marked_as_public_at: None,
         }));
         // remove
         store.remove(deps.as_mut().storage, &key.clone())?;
@@ -172,16 +176,19 @@ mod tests {
                 user_addr: user_addr.clone(),
                 count_change: 1,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key2, UserCountUpdateHistoryEntry{
                 user_addr: user_addr.clone(),
                 count_change: 2,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key3, UserCountUpdateHistoryEntry{
                 user_addr: user_addr.clone(),
                 count_change: 3,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
         ];
         entries.iter().for_each(|entry| {
@@ -196,16 +203,19 @@ mod tests {
             user_addr: user_addr.clone(),
             count_change: 1,
             created_at: Default::default(),
+            marked_as_public_at: None,
         });
         assert_eq!(x.next().unwrap()?.1, UserCountUpdateHistoryEntry{
             user_addr: user_addr.clone(),
             count_change: 2,
             created_at: Default::default(),
+            marked_as_public_at: None,
         });
         assert_eq!(x.next().unwrap()?.1, UserCountUpdateHistoryEntry{
             user_addr: user_addr.clone(),
             count_change: 3,
             created_at: Default::default(),
+            marked_as_public_at: None,
         });
         assert_eq!(x.next().is_none(), true);
 
@@ -246,16 +256,19 @@ mod tests {
                 user_addr: user_addr.clone(),
                 count_change: 1,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key2, UserCountUpdateHistoryEntry{
                 user_addr: user_addr.clone(),
                 count_change: 2,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key3, UserCountUpdateHistoryEntry{
                 user_addr: user_addr.clone(),
                 count_change: 3,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
         ];
         entries.iter().for_each(|entry| {
@@ -270,11 +283,13 @@ mod tests {
                     user_addr: user_addr.clone(),
                     count_change: 1,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr.clone(),
                     count_change: 2,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
@@ -285,6 +300,7 @@ mod tests {
                     user_addr: user_addr.clone(),
                     count_change: 3,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
@@ -318,16 +334,19 @@ mod tests {
                 user_addr: user_addr.clone(),
                 count_change: 1,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key2, UserCountUpdateHistoryEntry{
                 user_addr: user_addr.clone(),
                 count_change: 2,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key3, UserCountUpdateHistoryEntry{
                 user_addr: user_addr.clone(),
                 count_change: 3,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
         ];
         entries.iter().for_each(|entry| {
@@ -342,11 +361,13 @@ mod tests {
                     user_addr: user_addr.clone(),
                     count_change: 3,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr.clone(),
                     count_change: 2,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
@@ -357,6 +378,7 @@ mod tests {
                     user_addr: user_addr.clone(),
                     count_change: 1,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
@@ -386,16 +408,19 @@ mod tests {
                 user_addr: user_addr_1.clone(),
                 count_change: 1,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key2, UserCountUpdateHistoryEntry{
                 user_addr: user_addr_2.clone(),
                 count_change: 2,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key3, UserCountUpdateHistoryEntry{
                 user_addr: user_addr_3.clone(),
                 count_change: 3,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
         ];
         entries.iter().for_each(|entry| {
@@ -410,11 +435,13 @@ mod tests {
                     user_addr: user_addr_1.clone(),
                     count_change: 1,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr_2.clone(),
                     count_change: 2,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
@@ -425,6 +452,7 @@ mod tests {
                     user_addr: user_addr_3.clone(),
                     count_change: 3,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
@@ -460,16 +488,19 @@ mod tests {
                 user_addr: user_addr_1.clone(),
                 count_change: 1,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key2, UserCountUpdateHistoryEntry{
                 user_addr: user_addr_2.clone(),
                 count_change: 2,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
             (&key3, UserCountUpdateHistoryEntry{
                 user_addr: user_addr_3.clone(),
                 count_change: 3,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             }),
         ];
         entries.iter().for_each(|entry| {
@@ -484,11 +515,13 @@ mod tests {
                     user_addr: user_addr_3.clone(),
                     count_change: 3,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
                 UserCountUpdateHistoryEntry{
                     user_addr: user_addr_2.clone(),
                     count_change: 2,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
@@ -499,6 +532,7 @@ mod tests {
                     user_addr: user_addr_1.clone(),
                     count_change: 1,
                     created_at: Default::default(),
+                    marked_as_public_at: None,
                 },
             ],
         );
