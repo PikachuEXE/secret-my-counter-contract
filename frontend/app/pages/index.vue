@@ -27,14 +27,22 @@
             :min="1" :max="100"
             :disabled="!secretNetworkClient"
           />
-          <UButton
-            color="black"
-            :label="`Increase Count (${countIncreaseAmount})`"
-            icon="i-carbon-arrow-up"
-            block
-            :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
-            @click="increaseCount"
-          />
+          <div class="flex items-center justify-center space-x-2">
+            <UCheckbox
+              label="Make History Public"
+              v-model="countIncreaseMakeHistoryPublic"
+              class="flex-grow-0"
+              :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
+            />
+            <UButton
+              color="black"
+              :label="`Increase Count (${countIncreaseAmount})`"
+              icon="i-carbon-arrow-up"
+              class="flex-grow-1 justify-center"
+              :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
+              @click="increaseCount"
+            />
+          </div>
           <UAlert
             v-if="!transactionStatusStore.transactionInProgress && lastCountIncreaseTxResponse"
             icon="i-carbon-checkmark"
@@ -226,6 +234,7 @@ const queryResultItems: ComputedRef<Array<any>> = computed(() => {
 
 
 const countIncreaseAmount = ref(1)
+const countIncreaseMakeHistoryPublic = ref(false)
 const lastCountIncreaseTxResponse: Ref<null | TxResponse> = ref(null)
 connectedWalletEventListener.onWalletDisconnected(() => {
   countIncreaseAmount.value = 1
@@ -233,7 +242,12 @@ connectedWalletEventListener.onWalletDisconnected(() => {
 })
 async function increaseCount() {
   await secretClientProxy.executeContract({
-    msg: { increment: { count: countIncreaseAmount.value } },
+    msg: {
+      increment: {
+        count: countIncreaseAmount.value,
+        mark_history_as_public: countIncreaseMakeHistoryPublic.value
+      },
+    },
     onSuccess: (res) => { lastCountIncreaseTxResponse.value = res }
   })
 

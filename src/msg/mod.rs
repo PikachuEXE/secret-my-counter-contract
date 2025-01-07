@@ -16,6 +16,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Increment {
         count: Option<i32>,
+        mark_history_as_public: Option<bool>,
     },
     Reset { count: i32 },
 
@@ -39,6 +40,12 @@ pub enum QueryMsg {
     WithPermit {
         permit: Permit,
         query: QueryWithPermit,
+    },
+
+    GlobalPublicUserCountUpdateHistoryEntries {
+        page: Option<u32>,
+        page_size: Option<u32>,
+        reverse_order: Option<bool>,
     },
 }
 

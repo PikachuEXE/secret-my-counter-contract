@@ -38,11 +38,13 @@ mod tests {
                 user_addr: Addr::unchecked(user_addr_1),
                 count_change: 0,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             },
             UserCountUpdateHistoryEntry{
                 user_addr: Addr::unchecked(user_addr_2),
                 count_change: 0,
                 created_at: Default::default(),
+                marked_as_public_at: None,
             },
         ];
         entries.iter().for_each(|entry| {
