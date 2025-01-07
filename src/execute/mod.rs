@@ -14,7 +14,9 @@ pub fn execute_dispatch(
     msg: ExecuteMsg
 ) -> StdResult<Response> {
     let res = match msg {
-        ExecuteMsg::Increment { count } => increment::try_increment(deps, env, info, count),
+        ExecuteMsg::Increment { count, mark_history_as_public } => {
+            increment::try_increment(deps, env, info, count, mark_history_as_public.unwrap_or(false))
+        },
         ExecuteMsg::Reset { count } => reset::try_reset(deps, info, count),
         ExecuteMsg::RevokePermit { permit_name, .. } => permits::revoke_permit(deps, env, info, permit_name),
     };

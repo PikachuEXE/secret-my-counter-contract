@@ -13,6 +13,8 @@ static USER_COUNT_UPDATE_HISTORY_ENTRY_STORE: Keymap<String, UserCountUpdateHist
 static USER_ADDR_TO_USER_COUNT_UPDATE_HISTORY_INDEX_STORE: Keyset<String> = Keyset::new(b"user_count_update_history__user_addr_index");
 // Like a sequence, u64 since no conversion needed for using `sqids`
 static USER_COUNT_UPDATE_HISTORY_ENTRY_NEXT_ID_STORE: Item<u64> = Item::new(b"user_count_update_history__next_id");
+// Store IDs for public entries
+static GLOBAL_PUBLIC_USER_COUNT_UPDATE_HISTORY_INDEX_STORE: Keyset<String> = Keyset::new(b"global_public_user_count_update_history_index_store");
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -30,13 +32,21 @@ impl UserCountUpdateHistoryManager {
         let next_sqid = get_next_generated_sqid(storage, env)?;
         let user_addr = history_entry.user_addr.clone();
 
-        let store = if let Some(suffix) = suffix_4_test {
+        let entry_store = if let Some(suffix) = suffix_4_test {
             &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
         } else {
             &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
         };
-        store.insert(storage, &next_sqid.clone(), &history_entry)?;
+        entry_store.insert(storage, &next_sqid.clone(), &history_entry)?;
         UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr).insert(storage, &next_sqid.clone())?;
+        if history_entry.marked_as_public_at.is_some() {
+            let index_store = if let Some(suffix) = suffix_4_test {
+                &(GLOBAL_PUBLIC_USER_COUNT_UPDATE_HISTORY_INDEX_STORE.add_suffix(suffix))
+            } else {
+                &GLOBAL_PUBLIC_USER_COUNT_UPDATE_HISTORY_INDEX_STORE
+            };
+            index_store.insert(storage, &next_sqid.clone())?;
+        }
 
         Ok(())
     }
@@ -66,7 +76,7 @@ impl UserCountUpdateHistoryManager {
         store.get_len(storage)
     }
     pub fn get_user_entries<'a>(storage: &dyn Storage, user_addr: Addr, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
-        let store = if let Some(suffix) = suffix_4_test {
+        let entry_store = if let Some(suffix) = suffix_4_test {
             &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
         } else {
             &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
@@ -80,13 +90,44 @@ impl UserCountUpdateHistoryManager {
             user_addr_index.paging(storage, page_zero_based, page_size)
         };
         items.unwrap().iter().
-            map(|id| store.get(storage, id).unwrap()).
+            map(|id| entry_store.get(storage, id).unwrap()).
             collect::<Vec<UserCountUpdateHistoryEntry>>()
     }
     pub fn get_user_entries_total_count(storage: &dyn Storage, user_addr: Addr) -> StdResult<u32> {
         let user_addr_index = UserCountUpdateHistoryManager::get_user_addr_specific_index(user_addr);
 
         user_addr_index.get_len(storage)
+    }
+    pub fn get_public_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> Vec<UserCountUpdateHistoryEntry> {
+        let entry_store = if let Some(suffix) = suffix_4_test {
+            &(USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix))
+        } else {
+            &USER_COUNT_UPDATE_HISTORY_ENTRY_STORE
+        };
+        let index_store = if let Some(suffix) = suffix_4_test {
+            &(GLOBAL_PUBLIC_USER_COUNT_UPDATE_HISTORY_INDEX_STORE.add_suffix(suffix))
+        } else {
+            &GLOBAL_PUBLIC_USER_COUNT_UPDATE_HISTORY_INDEX_STORE
+        };
+
+        let items = if reverse_order {
+            keyset_reverse_paging(&index_store, storage, page_zero_based, page_size)
+        }
+        else {
+            index_store.paging(storage, page_zero_based, page_size)
+        };
+        items.unwrap().iter().
+            map(|id| entry_store.get(storage, id).unwrap()).
+            collect::<Vec<UserCountUpdateHistoryEntry>>()
+    }
+    pub fn get_public_entries_total_count(storage: &dyn Storage, suffix_4_test: Option<&[u8]>) -> StdResult<u32> {
+        let index_store = if let Some(suffix) = suffix_4_test {
+            &(GLOBAL_PUBLIC_USER_COUNT_UPDATE_HISTORY_INDEX_STORE.add_suffix(suffix))
+        } else {
+            &GLOBAL_PUBLIC_USER_COUNT_UPDATE_HISTORY_INDEX_STORE
+        };
+
+        index_store.get_len(storage)
     }
 
     fn get_user_addr_specific_index<'a>(user_addr: Addr) -> Keyset<'a, String> {
@@ -153,6 +194,67 @@ mod tests {
         // remove
         store.remove(deps.as_mut().storage, &key.clone())?;
         assert!(store.is_empty(deps.as_ref().storage)?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_entry_n_get_public_entries() -> StdResult<()> {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let suffix_4_test_str = nanoid!();
+        let suffix_4_test = suffix_4_test_str.as_bytes();
+        let store = USER_COUNT_UPDATE_HISTORY_ENTRY_STORE.add_suffix(suffix_4_test);
+        let key = nanoid!();
+        let user_addr = Addr::unchecked("whatever");
+
+        // is_empty
+        assert_eq!(store.is_empty(deps.as_ref().storage), Ok(true));
+        let entries: Vec<(&String, UserCountUpdateHistoryEntry)> = vec![
+            (&key, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 1,
+                created_at: Default::default(),
+                marked_as_public_at: Some(Timestamp::from_nanos(0)),
+            }),
+            (&key, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 2,
+                created_at: Default::default(),
+                marked_as_public_at: None,
+            }),
+            (&key, UserCountUpdateHistoryEntry{
+                user_addr: user_addr.clone(),
+                count_change: 3,
+                created_at: Default::default(),
+                marked_as_public_at: Some(Timestamp::from_nanos(0)),
+            }),
+        ];
+        entries.iter().for_each(|entry| {
+            UserCountUpdateHistoryManager::add_entry(deps.as_mut().storage, &env, entry.1.clone(), Some(suffix_4_test)).unwrap()
+        });
+
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_public_entries(deps.as_ref().storage, 0, 2, true, Some(suffix_4_test)),
+            vec![
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr.clone(),
+                    count_change: 3,
+                    created_at: Default::default(),
+                    marked_as_public_at: Some(Timestamp::from_nanos(0)),
+                },
+                UserCountUpdateHistoryEntry{
+                    user_addr: user_addr.clone(),
+                    count_change: 1,
+                    created_at: Default::default(),
+                    marked_as_public_at: Some(Timestamp::from_nanos(0)),
+                },
+            ],
+        );
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_public_entries(deps.as_ref().storage, 1, 2, true, Some(suffix_4_test)),
+            vec![],
+        );
 
         Ok(())
     }

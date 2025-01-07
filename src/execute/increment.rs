@@ -3,7 +3,7 @@ use crate::state::{STATE};
 use crate::state::user_statistic_data::{ USER_STATISTIC_DATA_STORE};
 use crate::state::user_count_update_history::{UserCountUpdateHistoryManager, UserCountUpdateHistoryEntry};
 
-pub fn try_increment(deps: DepsMut, env: Env, info: MessageInfo, count: Option<i32>) -> StdResult<Response> {
+pub fn try_increment(deps: DepsMut, env: Env, info: MessageInfo, count: Option<i32>, mark_history_as_public: bool) -> StdResult<Response> {
     let mut state = STATE.load(deps.storage)?;
     let count_change = if count.is_some() {
         count.unwrap()
@@ -24,7 +24,12 @@ pub fn try_increment(deps: DepsMut, env: Env, info: MessageInfo, count: Option<i
         user_addr: info.sender.clone(),
         count_change,
         created_at: env.block.time.clone(),
-        marked_as_public_at: None,
+        marked_as_public_at: if mark_history_as_public {
+            Some(env.block.time.clone())
+        }
+        else {
+            None
+        },
     }, None)?;
 
     deps.api.debug("count incremented successfully");
@@ -57,7 +62,7 @@ mod tests {
         let init_msg = InstantiateMsg { count: 17, contract_manager: "owner".to_string() };
 
         let _res = crate::instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg)?;
-        let _res = try_increment(deps.as_mut(), mock_env(), info.clone(), None)?;
+        let _res = try_increment(deps.as_mut(), mock_env(), info.clone(), None, false)?;
 
         // should increase counter by 1
         let state = STATE.load(deps.as_ref().storage);
@@ -99,7 +104,7 @@ mod tests {
         let init_msg = InstantiateMsg { count: 17, contract_manager: "owner".to_string() };
 
         let _res = crate::instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg)?;
-        let _res = try_increment(deps.as_mut(), mock_env(), info.clone(), Some(3))?;
+        let _res = try_increment(deps.as_mut(), mock_env(), info.clone(), Some(3), false)?;
 
         // should increase counter by N
         let state = STATE.load(deps.as_ref().storage);
@@ -119,6 +124,35 @@ mod tests {
                     count_increment_count: 1,
                 }
             )
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_increment_with_mark_history_as_public() -> StdResult<()> {
+        let creator = "creator";
+        let mut deps = mock_dependencies_with_balance(&[Coin {
+            denom: "token".to_string(),
+            amount: Uint128::new(2),
+        }]);
+        let info = mock_info(
+            creator,
+            &[Coin {
+                denom: "token".to_string(),
+                amount: Uint128::new(2),
+            }],
+        );
+        let init_msg = InstantiateMsg { count: 17, contract_manager: "owner".to_string() };
+
+        let _res = crate::instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg)?;
+        let _res = try_increment(deps.as_mut(), mock_env(), info.clone(), Some(3), true)?;
+
+        // should add public entry
+
+        assert_eq!(
+            UserCountUpdateHistoryManager::get_public_entries_total_count(deps.as_ref().storage, None)?,
+            1,
         );
 
         Ok(())
