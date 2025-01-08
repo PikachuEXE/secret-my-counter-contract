@@ -12,12 +12,13 @@ pub fn query_entries(deps: Deps, viewer: String, page_one_based: u32, page_size:
         reverse_order,
         suffix_4_test,
     )?;
-    let response_entries = entries.iter().map({|e| BookmarkedNumberEntryInResponse{
-        owner_addr: e.owner_addr.clone(),
-        number: e.number,
-        memo_text: e.memo_text.clone(),
-        created_at_in_ms: e.created_at.nanos() / 1_000_000,
-        updated_at_in_ms: e.updated_at.nanos() / 1_000_000,
+    let response_entries = entries.iter().map({|t| BookmarkedNumberEntryInResponse{
+        entry_id: t.0.clone(),
+        owner_addr: t.1.owner_addr.clone(),
+        number: t.1.number,
+        memo_text: t.1.memo_text.clone(),
+        created_at_in_ms: t.1.created_at.nanos() / 1_000_000,
+        updated_at_in_ms: t.1.updated_at.nanos() / 1_000_000,
     }}).collect();
     let total_count = BookmarkedNumbersManager::get_owned_entries_total_count(deps.storage, user_addr)?;
     Ok(QueryAnswer::BookmarkedNumberEntries {
@@ -32,6 +33,7 @@ mod tests {
     use cosmwasm_std::testing::*;
     use cosmwasm_std::{Addr};
     use crate::state::bookmarked_numbers::{BookmarkedNumberEntry};
+    use crate::state::utils::{get_generated_sqid};
     use nanoid::nanoid;
 
     #[test]
@@ -72,6 +74,8 @@ mod tests {
         assert_eq!(query_entries(deps.as_ref(), owner_addr_str.to_string(), 1, 2, false, Some(suffix_4_test))?, QueryAnswer::BookmarkedNumberEntries {
             entries: vec![
                 BookmarkedNumberEntryInResponse{
+                    entry_id: get_generated_sqid(1, env.block.time.clone())?,
+
                     owner_addr: owner_addr.clone(),
                     number: 1,
                     memo_text: memo_text.clone(),
@@ -80,6 +84,8 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
+                    entry_id: get_generated_sqid(2, env.block.time.clone())?,
+
                     owner_addr: owner_addr.clone(),
                     number: 2,
                     memo_text: memo_text.clone(),
@@ -93,6 +99,8 @@ mod tests {
         assert_eq!(query_entries(deps.as_ref(), owner_addr_str.to_string(), 1, 2, true, Some(suffix_4_test))?, QueryAnswer::BookmarkedNumberEntries {
             entries: vec![
                 BookmarkedNumberEntryInResponse{
+                    entry_id: get_generated_sqid(2, env.block.time.clone())?,
+
                     owner_addr: owner_addr.clone(),
                     number: 2,
                     memo_text: memo_text.clone(),
@@ -101,6 +109,8 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
+                    entry_id: get_generated_sqid(1, env.block.time.clone())?,
+
                     owner_addr: owner_addr.clone(),
                     number: 1,
                     memo_text: memo_text.clone(),

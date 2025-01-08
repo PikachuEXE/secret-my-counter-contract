@@ -46,6 +46,8 @@ pub struct UserCountUpdateHistoryEntryInResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct BookmarkedNumberEntryInResponse {
+    pub entry_id: String,
+
     pub owner_addr: Addr,
     pub number: i32,
     pub memo_text: String,

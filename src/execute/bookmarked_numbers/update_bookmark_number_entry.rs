@@ -57,10 +57,7 @@ mod tests {
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), 3, memo_text.clone(), false, Some(suffix_4_test))?;
 
         assert_eq!(
-            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, creator_addr.clone(), 0, 1, true, Some(suffix_4_test))?
-            .iter()
-            .map(|t| t.1.clone())
-            .collect::<Vec<_>>(),
+            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, creator_addr.clone(), 0, 1, true, Some(suffix_4_test))?,
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: creator_addr.clone(),
@@ -85,10 +82,7 @@ mod tests {
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), 4, memo_text.clone(), true, Some(suffix_4_test))?;
 
         assert_eq!(
-            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, creator_addr.clone(), 0, 1, true, Some(suffix_4_test))?
-            .iter()
-            .map(|t| t.1.clone())
-            .collect::<Vec<_>>(),
+            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, creator_addr.clone(), 0, 1, true, Some(suffix_4_test))?,
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: creator_addr.clone(),

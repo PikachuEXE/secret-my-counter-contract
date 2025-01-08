@@ -10,12 +10,13 @@ pub fn query_entries(deps: Deps, page_one_based: u32, page_size: u32, reverse_or
         reverse_order,
         suffix_4_test,
     )?;
-    let response_entries = entries.iter().map({|e| BookmarkedNumberEntryInResponse{
-        owner_addr: e.owner_addr.clone(),
-        number: e.number,
-        memo_text: e.memo_text.clone(),
-        created_at_in_ms: e.created_at.nanos() / 1_000_000,
-        updated_at_in_ms: e.updated_at.nanos() / 1_000_000,
+    let response_entries = entries.iter().map({|t| BookmarkedNumberEntryInResponse{
+        entry_id: t.0.clone(),
+        owner_addr: t.1.owner_addr.clone(),
+        number: t.1.number,
+        memo_text: t.1.memo_text.clone(),
+        created_at_in_ms: t.1.created_at.nanos() / 1_000_000,
+        updated_at_in_ms: t.1.updated_at.nanos() / 1_000_000,
     }}).collect();
     let total_count = BookmarkedNumbersManager::get_public_entries_total_count(deps.storage, suffix_4_test)?;
     Ok(QueryAnswer::BookmarkedNumberEntries {
@@ -30,6 +31,7 @@ mod tests {
     use cosmwasm_std::testing::*;
     use cosmwasm_std::{Addr, Timestamp};
     use crate::state::bookmarked_numbers::{BookmarkedNumberEntry};
+    use crate::state::utils::{get_generated_sqid};
     use nanoid::nanoid;
 
     #[test]
@@ -93,38 +95,49 @@ mod tests {
             assert!(BookmarkedNumbersManager::add_one_entry(deps.as_mut().storage, &env, entry.clone(), Some(suffix_4_test)).is_ok());
         });
         // actual query
-        assert_eq!(query_entries(deps.as_ref(), 1, 3, false, Some(suffix_4_test))?, QueryAnswer::BookmarkedNumberEntries {
-            entries: vec![
-                BookmarkedNumberEntryInResponse{
-                    owner_addr: Addr::unchecked(user_addr),
-                    number: 1,
-                    memo_text: memo_text.clone(),
+        assert_eq!(
+            query_entries(deps.as_ref(), 1, 3, false, Some(suffix_4_test))?,
+            QueryAnswer::BookmarkedNumberEntries {
+                entries: vec![
+                    BookmarkedNumberEntryInResponse{
+                        entry_id: get_generated_sqid(1, env.block.time.clone())?,
 
-                    created_at_in_ms: Default::default(),
-                    updated_at_in_ms: Default::default(),
-                },
-                BookmarkedNumberEntryInResponse{
-                    owner_addr: Addr::unchecked(user_addr),
-                    number: 3,
-                    memo_text: memo_text.clone(),
+                        owner_addr: Addr::unchecked(user_addr),
+                        number: 1,
+                        memo_text: memo_text.clone(),
 
-                    created_at_in_ms: Default::default(),
-                    updated_at_in_ms: Default::default(),
-                },
-                BookmarkedNumberEntryInResponse{
-                    owner_addr: Addr::unchecked(user_addr),
-                    number: 4,
-                    memo_text: memo_text.clone(),
+                        created_at_in_ms: Default::default(),
+                        updated_at_in_ms: Default::default(),
+                    },
+                    BookmarkedNumberEntryInResponse{
+                        entry_id: get_generated_sqid(3, env.block.time.clone())?,
 
-                    created_at_in_ms: Default::default(),
-                    updated_at_in_ms: Default::default(),
-                },
-            ],
-            total_count: 4,
-        });
+                        owner_addr: Addr::unchecked(user_addr),
+                        number: 3,
+                        memo_text: memo_text.clone(),
+
+                        created_at_in_ms: Default::default(),
+                        updated_at_in_ms: Default::default(),
+                    },
+                    BookmarkedNumberEntryInResponse{
+                        entry_id: get_generated_sqid(4, env.block.time.clone())?,
+
+                        owner_addr: Addr::unchecked(user_addr),
+                        number: 4,
+                        memo_text: memo_text.clone(),
+
+                        created_at_in_ms: Default::default(),
+                        updated_at_in_ms: Default::default(),
+                    },
+                ],
+                total_count: 4,
+            }
+        );
         assert_eq!(query_entries(deps.as_ref(), 1, 3, true, Some(suffix_4_test))?, QueryAnswer::BookmarkedNumberEntries {
             entries: vec![
                 BookmarkedNumberEntryInResponse{
+                    entry_id: get_generated_sqid(5, env.block.time.clone())?,
+
                     owner_addr: Addr::unchecked(user_addr),
                     number: 5,
                     memo_text: memo_text.clone(),
@@ -133,6 +146,8 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
+                    entry_id: get_generated_sqid(4, env.block.time.clone())?,
+
                     owner_addr: Addr::unchecked(user_addr),
                     number: 4,
                     memo_text: memo_text.clone(),
@@ -141,6 +156,8 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
+                    entry_id: get_generated_sqid(3, env.block.time.clone())?,
+
                     owner_addr: Addr::unchecked(user_addr),
                     number: 3,
                     memo_text: memo_text.clone(),

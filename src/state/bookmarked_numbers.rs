@@ -4,9 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use secret_toolkit::storage::{Item, Keymap, Keyset};
 use secret_toolkit::serialization::{Json};
-use sqids::Sqids;
 
-use crate::state::utils::{keyset_reverse_paging, keymap_reverse_paging};
+use crate::state::utils::{keyset_reverse_paging, keymap_reverse_paging, get_generated_sqid};
 
 static ENTRY_STORE: Keymap<String, BookmarkedNumberEntry, Json> = Keymap::new(b"bookmarked_numbers__entry");
 // User address => Entry ID set
@@ -70,7 +69,7 @@ impl BookmarkedNumbersManager {
         Ok(())
     }
 
-    pub fn get_global_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<BookmarkedNumberEntry>> {
+    pub fn get_global_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<(String, BookmarkedNumberEntry)>> {
         let store = if let Some(suffix) = suffix_4_test {
             &(ENTRY_STORE.add_suffix(suffix))
         } else {
@@ -83,7 +82,7 @@ impl BookmarkedNumbersManager {
         else {
             store.paging(storage, page_zero_based, page_size)
         };
-        Ok(items?.iter().map(|t| t.1.clone()).collect())
+        Ok(items?.iter().map(|t| (t.0.clone(), t.1.clone())).collect())
     }
     pub fn get_global_entries_total_count<'a>(storage: &dyn Storage, suffix_4_test: Option<&[u8]>) -> StdResult<u32> {
         let store = if let Some(suffix) = suffix_4_test {
@@ -95,7 +94,7 @@ impl BookmarkedNumbersManager {
         store.get_len(storage)
     }
 
-    pub fn get_owned_entries<'a>(storage: &dyn Storage, owner_addr: Addr, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<BookmarkedNumberEntry>> {
+    pub fn get_owned_entries<'a>(storage: &dyn Storage, owner_addr: Addr, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<(String, BookmarkedNumberEntry)>> {
         let entry_store = if let Some(suffix) = suffix_4_test {
             &(ENTRY_STORE.add_suffix(suffix))
         } else {
@@ -110,8 +109,8 @@ impl BookmarkedNumbersManager {
             owner_addr_index.paging(storage, page_zero_based, page_size)
         };
         Ok(items?.iter().
-            map(|id| entry_store.get(storage, id).unwrap()).
-            collect::<Vec<BookmarkedNumberEntry>>())
+            map(|id| (id.clone(), entry_store.get(storage, id).unwrap())).
+            collect::<Vec<(String, BookmarkedNumberEntry)>>())
     }
     pub fn get_owned_entries_total_count(storage: &dyn Storage, owner_addr: Addr) -> StdResult<u32> {
         let owner_addr_index = OWNER_ADDR_TO_ENTRY_INDEX_STORE.add_suffix(owner_addr.as_bytes());
@@ -119,7 +118,7 @@ impl BookmarkedNumbersManager {
         owner_addr_index.get_len(storage)
     }
 
-    pub fn get_public_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<BookmarkedNumberEntry>> {
+    pub fn get_public_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<(String, BookmarkedNumberEntry)>> {
         let entry_store = if let Some(suffix) = suffix_4_test {
             &(ENTRY_STORE.add_suffix(suffix))
         } else {
@@ -138,8 +137,8 @@ impl BookmarkedNumbersManager {
             index_store.paging(storage, page_zero_based, page_size)
         };
         Ok(items?.iter().
-            map(|id| entry_store.get(storage, id).unwrap()).
-            collect::<Vec<BookmarkedNumberEntry>>())
+            map(|id| (id.clone(), entry_store.get(storage, id).unwrap())).
+            collect::<Vec<(String, BookmarkedNumberEntry)>>())
     }
     pub fn get_public_entries_total_count(storage: &dyn Storage, suffix_4_test: Option<&[u8]>) -> StdResult<u32> {
         let index_store = if let Some(suffix) = suffix_4_test {
@@ -151,7 +150,7 @@ impl BookmarkedNumbersManager {
         index_store.get_len(storage)
     }
 
-    pub fn get_public_entries_by_number<'a>(storage: &dyn Storage, number: i32, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<BookmarkedNumberEntry>> {
+    pub fn get_public_entries_by_number<'a>(storage: &dyn Storage, number: i32, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<(String, BookmarkedNumberEntry)>> {
         let entry_store = if let Some(suffix) = suffix_4_test {
             &(ENTRY_STORE.add_suffix(suffix))
         } else {
@@ -166,8 +165,8 @@ impl BookmarkedNumbersManager {
             index_store.paging(storage, page_zero_based, page_size)
         };
         Ok(items?.iter().
-            map(|id| entry_store.get(storage, id).unwrap()).
-            collect::<Vec<BookmarkedNumberEntry>>())
+            map(|id| (id.clone(), entry_store.get(storage, id).unwrap())).
+            collect::<Vec<(String, BookmarkedNumberEntry)>>())
     }
     pub fn get_public_entries_by_number_total_count(storage: &dyn Storage, number: i32, _suffix_4_test: Option<&[u8]>) -> StdResult<u32> {
         NUMBER_TO_GLOBAL_PUBLIC_ENTRY_INDEX_STORE.add_suffix(number.to_string().as_bytes()).get_len(storage)
@@ -177,8 +176,7 @@ impl BookmarkedNumbersManager {
 fn get_next_generated_sqid(storage: &mut dyn Storage, env: &Env) -> StdResult<String> {
     let next_id_u64 = get_next_id_u64_and_advance_sequence(storage)?;
     let block_time = env.block.time.clone();
-    let sqids = Sqids::default();
-    Ok(sqids.encode(&[next_id_u64, block_time.nanos()]).unwrap())
+    get_generated_sqid(next_id_u64, block_time)
 }
 
 fn get_next_id_u64_and_advance_sequence(storage: &mut dyn Storage) -> StdResult<u64> {
@@ -288,7 +286,10 @@ mod tests {
         });
 
         assert_eq!(
-            BookmarkedNumbersManager::get_public_entries(deps.as_ref().storage, 0, 2, true, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_public_entries(deps.as_ref().storage, 0, 2, true, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr.clone(),
@@ -369,7 +370,10 @@ mod tests {
 
         // Default order
         assert_eq!(
-            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 0, 2, false, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 0, 2, false, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr.clone(),
@@ -392,7 +396,10 @@ mod tests {
             ],
         );
         assert_eq!(
-            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 1, 2, false, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 1, 2, false, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr.clone(),
@@ -408,7 +415,10 @@ mod tests {
 
         // Reverse order
         assert_eq!(
-            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 0, 2, true, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 0, 2, true, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr.clone(),
@@ -431,7 +441,10 @@ mod tests {
             ],
         );
         assert_eq!(
-            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 1, 2, true, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, owner_addr.clone(), 1, 2, true, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr.clone(),
@@ -507,7 +520,10 @@ mod tests {
 
         // Default order
         assert_eq!(
-            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 0, 2, false, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 0, 2, false, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr_1.clone(),
@@ -530,7 +546,10 @@ mod tests {
             ],
         );
         assert_eq!(
-            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 1, 2, false, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 1, 2, false, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr_3.clone(),
@@ -546,7 +565,10 @@ mod tests {
 
         // Reverse order
         assert_eq!(
-            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 0, 2, true, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 0, 2, true, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr_3.clone(),
@@ -569,7 +591,10 @@ mod tests {
             ],
         );
         assert_eq!(
-            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 1, 2, true, Some(suffix_4_test))?,
+            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 1, 2, true, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
             vec![
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr_1.clone(),
