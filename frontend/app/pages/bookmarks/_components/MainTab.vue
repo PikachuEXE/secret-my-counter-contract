@@ -1,0 +1,223 @@
+<template>
+  <UCard class="mt-4">
+    <div class="space-y-4">
+      <div>
+        <UButton
+          color="primary"
+          variant="outline"
+          label="Bookmark a number"
+          icon="i-carbon-bookmark-add"
+          to="/bookmarks/new"
+        />
+      </div>
+      <UDivider />
+      <UButton
+        v-if="shownEntriesTotalCount === 0"
+        color="black"
+        label="Query My Bookmarked Numbers"
+        icon="i-carbon-bookmark"
+        block
+        :disabled="!secretNetworkClient"
+        @click="() => fetch(page, pageSize)"
+      />
+      <template v-if="secretNetworkClient">
+        <UDivider />
+        <UAccordion
+          :key="queryEntriesResultLastUpdatedAt"
+          :items="queryEntriesResultItems"
+        >
+          <template #result>
+            <div v-if="shownEntries == null">
+            </div>
+            <div v-else-if="shownEntries?.length === 0">
+              Empty
+            </div>
+            <div class="space-y-4" v-else>
+              <div class="flex justify-center gap-x-2">
+                <UButton
+                  label="prev"
+                  color="primary"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-mdi-arrow-left"
+                  :disabled="isFirstPage"
+                  @click="prev"
+                />
+                <UBadge
+                  :label="`${currentPage} / ${pageCount}`"
+                  color="primary"
+                  variant="solid"
+                  size="xs"
+                />
+                <UButton
+                  label="next"
+                  color="primary"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-mdi-arrow-right"
+                  :trailing="true"
+                  :disabled="isLastPage"
+                  @click="next"
+                />
+              </div>
+
+              <div class="entry-list">
+                <template v-for="(e, index) in shownEntries">
+                  <div
+                    class="p-2"
+                  >
+                    <p>
+                      Number: {{ e.number }}
+                    </p>
+                    <p v-if="e.memo_text">
+                      Memo: {{ e.memo_text }}
+                    </p>
+                    <p>
+                      Created:
+                      <NuxtTime :datetime="e.created_at_in_ms" relative /> ({{ new Date(e.created_at_in_ms).toISOString() }})
+                    </p>
+                    <p>
+                      Updated:
+                      <NuxtTime :datetime="e.updated_at_in_ms" relative /> ({{ new Date(e.updated_at_in_ms).toISOString() }})
+                    </p>
+                  </div>
+                  <UDivider v-if="index < shownEntries.length - 1" />
+                </template>
+              </div>
+
+              <div class="flex justify-center gap-x-2">
+                <UButton
+                  label="prev"
+                  color="primary"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-mdi-arrow-left"
+                  :disabled="isFirstPage"
+                  @click="prev"
+                />
+                <UBadge
+                  :label="`${currentPage} / ${pageCount}`"
+                  color="primary"
+                  variant="solid"
+                  size="xs"
+                />
+                <UButton
+                  label="next"
+                  color="primary"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-mdi-arrow-right"
+                  :trailing="true"
+                  :disabled="isLastPage"
+                  @click="next"
+                />
+              </div>
+
+            </div>
+          </template>
+        </UAccordion>
+      </template>
+    </div>
+  </UCard>
+</template>
+
+<script setup lang="ts">
+import { useOffsetPagination } from "@vueuse/core"
+
+import { type BookmarkedNumberEntry } from "../types"
+
+const connectedWalletStore = useConnectedWalletStore()
+const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
+const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
+
+const secretClientProxy = useSecretClientProxy()
+
+const permits = usePermits()
+
+
+const shownEntries: Ref<null | BookmarkedNumberEntry[]> = ref(null)
+const shownEntriesTotalCount = ref(0)
+const queryEntriesError = ref(null) as Ref<String | null>
+const queryEntriesResultLastUpdatedAt = ref("")
+const page = ref(1)
+const pageSize = ref(10)
+function resetState(): void {
+  shownEntries.value = null
+  shownEntriesTotalCount.value = 0
+  queryEntriesError.value = null
+  queryEntriesResultLastUpdatedAt.value = ""
+  page.value = 1
+  pageSize.value = 10
+}
+useConnectedWalletEventListener().onWalletDisconnected(resetState)
+function fetchData({ currentPage, currentPageSize }: { currentPage: number, currentPageSize: number }) {
+  if (!connectedWalletStore.isWalletConnected) { return }
+
+  fetch(currentPage, currentPageSize)
+}
+async function fetch(page: number, pageSize: number) {
+  await permits.getOwnerPermit(async (permit) => {
+    const queryResult = await secretClientProxy.queryContract({
+      with_permit: {
+        query: {
+          owned_bookmarked_number_entries: {
+            reverse_order: true,
+            page: page,
+            page_size: pageSize,
+          },
+        },
+        permit: permit,
+      },
+    }) as {
+      bookmarked_number_entries: {
+        entries: BookmarkedNumberEntry[],
+        total_count: number,
+      },
+    } | string
+    if (typeof queryResult === "string") {
+      shownEntries.value = []
+      shownEntriesTotalCount.value = Number.POSITIVE_INFINITY
+      queryEntriesError.value = queryResult
+      queryEntriesResultLastUpdatedAt.value = Date.now().toString()
+      return
+    }
+
+    shownEntries.value = queryResult.bookmarked_number_entries.entries
+    shownEntriesTotalCount.value = queryResult.bookmarked_number_entries.total_count
+    queryEntriesError.value = null
+    queryEntriesResultLastUpdatedAt.value = Date.now().toString()
+  })
+}
+
+const {
+  currentPage,
+  pageCount,
+  isFirstPage,
+  isLastPage,
+  prev,
+  next,
+} = useOffsetPagination({
+  total: shownEntriesTotalCount,
+  page: 1,
+  pageSize,
+  onPageChange: fetchData,
+  onPageSizeChange: fetchData,
+})
+const queryEntriesResultItems: ComputedRef<Array<any>> = computed(() => {
+  return [
+    {
+      label: "Result",
+      slot: "result",
+      defaultOpen: shownEntries.value !== null,
+      disabled: shownEntries.value === null,
+    },
+    {
+      label: "Error",
+      content: queryEntriesError.value ? queryEntriesError.value : "",
+      defaultOpen: queryEntriesError.value !== null,
+      disabled: queryEntriesError.value === null,
+    },
+  ]
+})
+
+</script>
