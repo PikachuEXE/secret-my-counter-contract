@@ -20,6 +20,12 @@ pub enum ExecuteMsg {
     },
     Reset { count: i32 },
 
+    AddBookmarkNumber {
+        number: i32,
+        memo_text: String,
+        mark_entry_as_public: bool,
+    },
+
     /// disallow the use of a permit
     RevokePermit {
         /// name of the permit that is no longer valid
@@ -47,6 +53,12 @@ pub enum QueryMsg {
         page_size: Option<u32>,
         reverse_order: Option<bool>,
     },
+
+    GlobalPublicBookmarkedNumberEntries {
+        page: Option<u32>,
+        page_size: Option<u32>,
+        reverse_order: Option<bool>,
+    },
 }
 
 /// queries using permits instead of viewing keys
@@ -61,8 +73,18 @@ pub enum QueryWithPermit {
         page_size: Option<u32>,
         reverse_order: Option<bool>,
     },
-
     GlobalUserCountUpdateHistoryEntries {
+        page: Option<u32>,
+        page_size: Option<u32>,
+        reverse_order: Option<bool>,
+    },
+
+    OwnedBookmarkedNumberEntries {
+        page: Option<u32>,
+        page_size: Option<u32>,
+        reverse_order: Option<bool>,
+    },
+    GlobalBookmarkedNumberEntries {
         page: Option<u32>,
         page_size: Option<u32>,
         reverse_order: Option<bool>,

@@ -23,6 +23,11 @@ pub enum QueryAnswer {
         entries: Vec<UserCountUpdateHistoryEntryInResponse>,
         total_count: u32,
     },
+
+    BookmarkedNumberEntries {
+        entries: Vec<BookmarkedNumberEntryInResponse>,
+        total_count: u32,
+    },
 }
 
 // We define a custom struct for each query response
@@ -37,4 +42,15 @@ pub struct UserCountUpdateHistoryEntryInResponse {
     pub count_change: i32,
     // Using milliseconds since JS `Date` uses it
     pub created_at_in_ms: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct BookmarkedNumberEntryInResponse {
+    pub owner_addr: Addr,
+    pub number: i32,
+    pub memo_text: String,
+
+    // Using milliseconds since JS `Date` uses it
+    pub created_at_in_ms: u64,
+    pub updated_at_in_ms: u64,
 }

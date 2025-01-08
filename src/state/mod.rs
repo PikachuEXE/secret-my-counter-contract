@@ -3,6 +3,7 @@ pub mod state;
 pub mod schema_migrations;
 pub mod user_statistic_data;
 pub mod user_count_update_history;
+pub mod bookmarked_numbers;
 mod utils;
 
 pub use config::{CONFIG, Config};

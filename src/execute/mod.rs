@@ -6,6 +6,7 @@ use crate::state::BLOCK_SIZE;
 mod increment;
 mod reset;
 mod permits;
+mod bookmarked_numbers;
 
 pub fn execute_dispatch(
     deps: DepsMut,
@@ -18,6 +19,11 @@ pub fn execute_dispatch(
             increment::try_increment(deps, env, info, count, mark_history_as_public.unwrap_or(false))
         },
         ExecuteMsg::Reset { count } => reset::try_reset(deps, info, count),
+
+        ExecuteMsg::AddBookmarkNumber { number, memo_text, mark_entry_as_public } => {
+            bookmarked_numbers::add_bookmark_number::execute(deps, env, info, number, memo_text, mark_entry_as_public, None)
+        },
+
         ExecuteMsg::RevokePermit { permit_name, .. } => permits::revoke_permit(deps, env, info, permit_name),
     };
 
