@@ -23,6 +23,9 @@ pub fn execute_dispatch(
         ExecuteMsg::AddBookmarkNumber { number, memo_text, mark_entry_as_public } => {
             bookmarked_numbers::add_bookmark_number::execute(deps, env, info, number, memo_text, mark_entry_as_public, None)
         },
+        ExecuteMsg::UpdateBookmarkedNumber { entry_id, memo_text } => {
+            bookmarked_numbers::update_bookmark_number_entry::execute(deps, env, info, entry_id, memo_text, None)
+        },
 
         ExecuteMsg::RevokePermit { permit_name, .. } => permits::revoke_permit(deps, env, info, permit_name),
     };

@@ -25,6 +25,10 @@ pub enum ExecuteMsg {
         memo_text: String,
         mark_entry_as_public: bool,
     },
+    UpdateBookmarkedNumber {
+        entry_id: String,
+        memo_text: String,
+    },
 
     /// disallow the use of a permit
     RevokePermit {
