@@ -7,6 +7,7 @@ mod count;
 mod with_permit;
 mod privileges;
 mod global_public_user_count_update_history_entries;
+mod public;
 
 pub fn query_dispatch(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let res = match msg {
@@ -20,7 +21,15 @@ pub fn query_dispatch(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary>
             let page_size_w_fallback = page_size.unwrap_or(10);
             let valid_page_size = if (1..101).contains(&page_size_w_fallback) { page_size_w_fallback } else { 1 };
             to_binary(&global_public_user_count_update_history_entries::query_user_count_update_history_entries(deps, valid_page_one_based, valid_page_size, reverse_order.unwrap_or(false), None)?)
-        }
+        },
+
+        QueryMsg::GlobalPublicBookmarkedNumberEntries {page, page_size, reverse_order} => {
+            let page_w_fallback = page.unwrap_or(1);
+            let valid_page_one_based = if page_w_fallback < 1 { 1 } else { page_w_fallback };
+            let page_size_w_fallback = page_size.unwrap_or(10);
+            let valid_page_size = if (1..101).contains(&page_size_w_fallback) { page_size_w_fallback } else { 1 };
+            to_binary(&public::bookmarked_number_entries::global_public_entries::query_entries(deps, valid_page_one_based, valid_page_size, reverse_order.unwrap_or(false), None)?)
+        },
     };
 
     pad_query_result(res, BLOCK_SIZE)

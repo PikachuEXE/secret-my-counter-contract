@@ -165,6 +165,11 @@ const links = [
       icon: 'i-mdi-history',
       to: '/history',
     },
+    {
+      label: 'Bookmarks',
+      icon: 'i-carbon-bookmark',
+      to: '/bookmarks',
+    },
   ],
   [
     {

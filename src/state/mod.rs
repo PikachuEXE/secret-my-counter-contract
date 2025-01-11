@@ -3,7 +3,8 @@ pub mod state;
 pub mod schema_migrations;
 pub mod user_statistic_data;
 pub mod user_count_update_history;
-mod utils;
+pub mod bookmarked_numbers;
+pub(crate) mod utils;
 
 pub use config::{CONFIG, Config};
 pub use state::{STATE, State};
