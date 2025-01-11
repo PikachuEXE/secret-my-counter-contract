@@ -28,6 +28,9 @@ pub enum QueryAnswer {
         entries: Vec<BookmarkedNumberEntryInResponse>,
         total_count: u32,
     },
+    OneBookmarkedNumberEntry {
+        entry: BookmarkedNumberEntryInResponse,
+    },
 }
 
 // We define a custom struct for each query response

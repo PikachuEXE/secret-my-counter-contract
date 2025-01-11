@@ -101,6 +101,26 @@ impl BookmarkedNumbersManager {
         Ok(())
     }
 
+
+    pub fn get_one_owned_entry<'a>(storage: &dyn Storage, viewer_addr: Addr, entry_id: String, suffix_4_test: Option<&[u8]>) -> StdResult<BookmarkedNumberEntry> {
+        let entry_store = if let Some(suffix) = suffix_4_test {
+            &(ENTRY_STORE.add_suffix(suffix))
+        } else {
+            &ENTRY_STORE
+        };
+        if !entry_store.contains(storage, &entry_id) {
+            return Err(StdError::generic_err("Entry not found"));
+        }
+
+        // Only owner can fetch
+        if !OWNER_ADDR_TO_ENTRY_INDEX_STORE.add_suffix(viewer_addr.as_bytes()).contains(storage, &entry_id) {
+            return Err(StdError::generic_err("Unauthorized"));
+        }
+
+        Ok(entry_store.get(storage, &entry_id).unwrap())
+    }
+
+
     pub fn get_global_entries<'a>(storage: &dyn Storage, page_zero_based: u32, page_size: u32, reverse_order: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Vec<(String, BookmarkedNumberEntry)>> {
         let store = if let Some(suffix) = suffix_4_test {
             &(ENTRY_STORE.add_suffix(suffix))
@@ -369,6 +389,64 @@ mod tests {
                 },
             ],
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_one_owned_entry() -> StdResult<()> {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let suffix_4_test_str = nanoid!();
+        let suffix_4_test = suffix_4_test_str.as_bytes();
+        let store = ENTRY_STORE.add_suffix(suffix_4_test);
+        let owner_addr1_str = "owner_addr1";
+        let owner_addr2_str = "owner_addr2";
+        let owner_addr1 = Addr::unchecked(owner_addr1_str);
+        let owner_addr2 = Addr::unchecked(owner_addr2_str);
+
+        // is_empty
+        assert_eq!(store.is_empty(deps.as_ref().storage), Ok(true));
+        let entries: Vec<BookmarkedNumberEntry> = vec![
+            BookmarkedNumberEntry{
+                owner_addr: owner_addr1.clone(),
+                number: 1,
+                memo_text: "".to_string(),
+                marked_as_public_at: None,
+
+                created_at: Default::default(),
+                updated_at: Default::default(),
+            },
+            BookmarkedNumberEntry{
+                owner_addr: owner_addr2.clone(),
+                number: 2,
+                memo_text: "".to_string(),
+                marked_as_public_at: None,
+
+                created_at: Default::default(),
+                updated_at: Default::default(),
+            },
+        ];
+        entries.iter().for_each(|entry| {
+            assert_eq!(
+                BookmarkedNumbersManager::add_one_entry(deps.as_mut().storage, &env, entry.clone(), Some(suffix_4_test)),
+                Ok(()),
+            );
+        });
+
+        // Not found
+        let entry_id = get_generated_sqid(3, env.block.time.clone())?;
+        assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr1.clone(), entry_id, Some(suffix_4_test)), Err(StdError::generic_err("Entry not found")));
+        // Unauthorized
+        let entry_id = get_generated_sqid(1, env.block.time.clone())?;
+        assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr2.clone(), entry_id, Some(suffix_4_test)), Err(StdError::generic_err("Unauthorized")));
+        let entry_id = get_generated_sqid(2, env.block.time.clone())?;
+        assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr1.clone(), entry_id, Some(suffix_4_test)), Err(StdError::generic_err("Unauthorized")));
+        // Success
+        let entry_id = get_generated_sqid(1, env.block.time.clone())?;
+        assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr1.clone(), entry_id, Some(suffix_4_test))?, entries[0]);
+        let entry_id = get_generated_sqid(2, env.block.time.clone())?;
+        assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr2.clone(), entry_id, Some(suffix_4_test)).is_ok(), true);
 
         Ok(())
     }

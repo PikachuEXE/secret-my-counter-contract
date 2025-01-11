@@ -88,6 +88,9 @@ pub fn permit_query_dispatch(
             let valid_page_size = if (1..101).contains(&page_size_w_fallback) { page_size_w_fallback } else { 1 };
             bookmarked_number_entries::global_entries::query_entries(deps, valid_page_one_based, valid_page_size, reverse_order.unwrap_or(false), None)?
         }
+        QueryWithPermit::OneOwnedBookmarkedNumberEntry {entry_id} => {
+            bookmarked_number_entries::one_owned_entry::query(deps, viewer, entry_id, None)?
+        }
     };
 
     to_binary(&res)

@@ -93,6 +93,9 @@ pub enum QueryWithPermit {
         page_size: Option<u32>,
         reverse_order: Option<bool>,
     },
+    OneOwnedBookmarkedNumberEntry {
+        entry_id: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
