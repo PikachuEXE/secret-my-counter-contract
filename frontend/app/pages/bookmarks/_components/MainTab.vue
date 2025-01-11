@@ -63,24 +63,12 @@
 
               <div class="entry-list">
                 <template v-for="(e, index) in shownEntries">
-                  <div
+                  <EntryRow
                     class="p-2"
-                  >
-                    <p>
-                      Number: {{ e.number }}
-                    </p>
-                    <p v-if="e.memo_text">
-                      Memo: {{ e.memo_text }}
-                    </p>
-                    <p>
-                      Created:
-                      <NuxtTime :datetime="e.created_at_in_ms" relative /> ({{ new Date(e.created_at_in_ms).toISOString() }})
-                    </p>
-                    <p>
-                      Updated:
-                      <NuxtTime :datetime="e.updated_at_in_ms" relative /> ({{ new Date(e.updated_at_in_ms).toISOString() }})
-                    </p>
-                  </div>
+                    :entry="e"
+                    :owner-address-visible="false"
+                    :edit-button-visible="true"
+                  />
                   <UDivider v-if="index < shownEntries.length - 1" />
                 </template>
               </div>
@@ -125,6 +113,7 @@
 import { useOffsetPagination } from "@vueuse/core"
 
 import { type BookmarkedNumberEntry } from "../types"
+import EntryRow from "~/pages/bookmarks/_components/EntryRow.vue";
 
 const connectedWalletStore = useConnectedWalletStore()
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()

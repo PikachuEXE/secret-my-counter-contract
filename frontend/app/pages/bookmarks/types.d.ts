@@ -1,5 +1,7 @@
 
 export type BookmarkedNumberEntry = {
+  entry_id: string
+
   owner_addr: string
   number: number
   memo_text: string
