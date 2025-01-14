@@ -3,8 +3,8 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use secret_contract_example::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use secret_contract_example::state::State;
+use secret_my_counter_contract::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use secret_my_counter_contract::state::State;
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

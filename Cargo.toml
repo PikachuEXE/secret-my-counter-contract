@@ -1,7 +1,7 @@
 [package]
-name = "secret_contract_example"
+name = "secret_my_counter_contract"
 version = "0.1.0"
-authors = ["SecretTemplateExample"]
+authors = ["PikachuEXE"]
 edition = "2021"
 
 [lib]
