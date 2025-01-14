@@ -12,99 +12,92 @@
       </div>
       <UDivider />
       <UButton
-        v-if="shownEntriesTotalCount === 0"
         color="black"
         label="Query My Bookmarked Numbers"
         icon="i-carbon-bookmark"
         block
         :disabled="!secretNetworkClient"
-        @click="() => fetch(page, pageSize)"
+        @click="refreshInitPage"
       />
-      <template v-if="secretNetworkClient">
+      <template v-if="shownEntries != null">
         <UDivider />
-        <UAccordion
-          :key="queryEntriesResultLastUpdatedAt"
-          :items="queryEntriesResultItems"
-        >
-          <template #result>
-            <div v-if="shownEntries == null">
-            </div>
-            <div v-else-if="shownEntries?.length === 0">
-              Empty
-            </div>
-            <div class="space-y-4" v-else>
-              <div class="flex justify-center gap-x-2">
-                <UButton
-                  label="prev"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-left"
-                  :disabled="isFirstPage"
-                  @click="prev"
-                />
-                <UBadge
-                  :label="`${currentPage} / ${pageCount}`"
-                  color="primary"
-                  variant="solid"
-                  size="xs"
-                />
-                <UButton
-                  label="next"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-right"
-                  :trailing="true"
-                  :disabled="isLastPage"
-                  @click="next"
-                />
-              </div>
+        <p v-if="queryEntriesError != null">
+          {{ queryEntriesError }}
+        </p>
+        <div v-else-if="shownEntries?.length === 0">
+          Empty
+        </div>
+        <div class="space-y-4" v-else>
+          <div class="flex justify-center gap-x-2">
+            <UButton
+              label="prev"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-left"
+              :disabled="isFirstPage"
+              @click="prev"
+            />
+            <UBadge
+              :label="`${currentPage} / ${pageCount}`"
+              color="primary"
+              variant="solid"
+              size="xs"
+            />
+            <UButton
+              label="next"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-right"
+              :trailing="true"
+              :disabled="isLastPage"
+              @click="next"
+            />
+          </div>
 
-              <div class="entry-list">
-                <template v-for="(e, index) in shownEntries">
-                  <EntryRow
-                    class="p-2"
-                    :entry="e"
-                    :owner-address-visible="false"
-                    :marked-as-public-at-visible="true"
-                    :edit-button-visible="true"
-                  />
-                  <UDivider v-if="index < shownEntries.length - 1" />
-                </template>
-              </div>
+          <div class="entry-list">
+            <template v-for="(e, index) in shownEntries">
+              <EntryRow
+                class="p-2"
+                :entry="e"
+                :owner-address-visible="false"
+                :marked-as-public-at-visible="true"
+                :edit-button-visible="true"
+              />
+              <UDivider v-if="index < shownEntries.length - 1" />
+            </template>
+          </div>
 
-              <div class="flex justify-center gap-x-2">
-                <UButton
-                  label="prev"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-left"
-                  :disabled="isFirstPage"
-                  @click="prev"
-                />
-                <UBadge
-                  :label="`${currentPage} / ${pageCount}`"
-                  color="primary"
-                  variant="solid"
-                  size="xs"
-                />
-                <UButton
-                  label="next"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-right"
-                  :trailing="true"
-                  :disabled="isLastPage"
-                  @click="next"
-                />
-              </div>
+          <div class="flex justify-center gap-x-2">
+            <UButton
+              label="prev"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-left"
+              :disabled="isFirstPage"
+              @click="prev"
+            />
+            <UBadge
+              :label="`${currentPage} / ${pageCount}`"
+              color="primary"
+              variant="solid"
+              size="xs"
+            />
+            <UButton
+              label="next"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-right"
+              :trailing="true"
+              :disabled="isLastPage"
+              @click="next"
+            />
+          </div>
 
-            </div>
-          </template>
-        </UAccordion>
+        </div>
       </template>
     </div>
   </UCard>
@@ -128,18 +121,21 @@ const permits = usePermits()
 const shownEntries: Ref<null | BookmarkedNumberEntry[]> = ref(null)
 const shownEntriesTotalCount = ref(0)
 const queryEntriesError = ref(null) as Ref<String | null>
-const queryEntriesResultLastUpdatedAt = ref("")
 const page = ref(1)
 const pageSize = ref(10)
 function resetState(): void {
   shownEntries.value = null
   shownEntriesTotalCount.value = 0
   queryEntriesError.value = null
-  queryEntriesResultLastUpdatedAt.value = ""
   page.value = 1
   pageSize.value = 10
 }
 useConnectedWalletEventListener().onWalletDisconnected(resetState)
+async function refreshInitPage() {
+  page.value = 1
+  pageSize.value = 10
+  await fetch(page.value, pageSize.value)
+}
 function fetchData({ currentPage, currentPageSize }: { currentPage: number, currentPageSize: number }) {
   if (!connectedWalletStore.isWalletConnected) { return }
 
@@ -168,14 +164,12 @@ async function fetch(page: number, pageSize: number) {
       shownEntries.value = []
       shownEntriesTotalCount.value = Number.POSITIVE_INFINITY
       queryEntriesError.value = queryResult
-      queryEntriesResultLastUpdatedAt.value = Date.now().toString()
       return
     }
 
     shownEntries.value = queryResult.bookmarked_number_entries.entries
     shownEntriesTotalCount.value = queryResult.bookmarked_number_entries.total_count
     queryEntriesError.value = null
-    queryEntriesResultLastUpdatedAt.value = Date.now().toString()
   })
 }
 
@@ -192,22 +186,6 @@ const {
   pageSize,
   onPageChange: fetchData,
   onPageSizeChange: fetchData,
-})
-const queryEntriesResultItems: ComputedRef<Array<any>> = computed(() => {
-  return [
-    {
-      label: "Result",
-      slot: "result",
-      defaultOpen: shownEntries.value !== null,
-      disabled: shownEntries.value === null,
-    },
-    {
-      label: "Error",
-      content: queryEntriesError.value ? queryEntriesError.value : "",
-      defaultOpen: queryEntriesError.value !== null,
-      disabled: queryEntriesError.value === null,
-    },
-  ]
 })
 
 </script>

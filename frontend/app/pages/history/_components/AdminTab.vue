@@ -2,106 +2,98 @@
   <UCard class="mt-4">
     <div class="space-y-4">
       <UButton
-        v-if="shownUserCountUpdateHistoryEntriesTotalCount === 0"
         color="black"
         label="Query Global Count Update History"
         icon="i-carbon-chart-column"
         block
         :disabled="!secretNetworkClient"
-        @click="() => fetch(page, pageSize)"
+        @click="refreshInitPage"
       />
-      <template v-if="secretNetworkClient">
+      <template v-if="userCountUpdateHistoryEntries != null">
         <UDivider />
-        <UAccordion
-          :key="queryUserCountUpdateHistoryEntriesResultLastUpdatedAt"
-          :items="queryUserCountUpdateHistoryEntriesResultItems"
-        >
-          <template #result>
-            <div v-if="userCountUpdateHistoryEntries == null">
-            </div>
-            <div v-else-if="userCountUpdateHistoryEntries?.length === 0">
-              Empty
-            </div>
-            <div class="space-y-4" v-else>
-              <div class="flex justify-center gap-x-2">
-                <UButton
-                  label="prev"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-left"
-                  :disabled="isFirstPage"
-                  @click="prev"
-                />
-                <UBadge
-                  :label="`${currentPage} / ${pageCount}`"
-                  color="primary"
-                  variant="solid"
-                  size="xs"
-                />
-                <UButton
-                  label="next"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-right"
-                  :trailing="true"
-                  :disabled="isLastPage"
-                  @click="next"
-                />
-              </div>
+        <p v-if="queryUserCountUpdateHistoryEntriesError">
+          {{ queryUserCountUpdateHistoryEntriesError }}
+        </p>
+        <div v-else-if="userCountUpdateHistoryEntries?.length === 0">
+          Empty
+        </div>
+        <div class="space-y-4" v-else>
+          <div class="flex justify-center gap-x-2">
+            <UButton
+              label="prev"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-left"
+              :disabled="isFirstPage"
+              @click="prev"
+            />
+            <UBadge
+              :label="`${currentPage} / ${pageCount}`"
+              color="primary"
+              variant="solid"
+              size="xs"
+            />
+            <UButton
+              label="next"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-right"
+              :trailing="true"
+              :disabled="isLastPage"
+              @click="next"
+            />
+          </div>
 
-              <div class="entry-list">
-                <template v-for="(e, index) in userCountUpdateHistoryEntries">
-                  <div
-                    class="p-2"
-                  >
-                    <p>
-                      User: {{ e.user_addr }}
-                    </p>
-                    <p>
-                      Count Change: {{ e.count_change }}
-                    </p>
-                    <p>
-                      Time:
-                      <NuxtTime :datetime="e.created_at_in_ms" relative /> ({{ new Date(e.created_at_in_ms).toISOString() }})
-                    </p>
-                  </div>
-                  <UDivider v-if="index < userCountUpdateHistoryEntries.length - 1" />
-                </template>
+          <div class="entry-list">
+            <template v-for="(e, index) in userCountUpdateHistoryEntries">
+              <div
+                class="p-2"
+              >
+                <p>
+                  User: {{ e.user_addr }}
+                </p>
+                <p>
+                  Count Change: {{ e.count_change }}
+                </p>
+                <p>
+                  Time:
+                  <NuxtTime :datetime="e.created_at_in_ms" relative /> ({{ new Date(e.created_at_in_ms).toISOString() }})
+                </p>
               </div>
+              <UDivider v-if="index < userCountUpdateHistoryEntries.length - 1" />
+            </template>
+          </div>
 
-              <div class="flex justify-center gap-x-2">
-                <UButton
-                  label="prev"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-left"
-                  :disabled="isFirstPage"
-                  @click="prev"
-                />
-                <UBadge
-                  :label="`${currentPage} / ${pageCount}`"
-                  color="primary"
-                  variant="solid"
-                  size="xs"
-                />
-                <UButton
-                  label="next"
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-mdi-arrow-right"
-                  :trailing="true"
-                  :disabled="isLastPage"
-                  @click="next"
-                />
-              </div>
-
-            </div>
-          </template>
-        </UAccordion>
+          <div class="flex justify-center gap-x-2">
+            <UButton
+              label="prev"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-left"
+              :disabled="isFirstPage"
+              @click="prev"
+            />
+            <UBadge
+              :label="`${currentPage} / ${pageCount}`"
+              color="primary"
+              variant="solid"
+              size="xs"
+            />
+            <UButton
+              label="next"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              icon="i-mdi-arrow-right"
+              :trailing="true"
+              :disabled="isLastPage"
+              @click="next"
+            />
+          </div>
+        </div>
       </template>
     </div>
   </UCard>
@@ -123,7 +115,6 @@ const permits = usePermits()
 
 const userCountUpdateHistoryEntries: Ref<null | UserCountUpdateHistoryEntry[]> = ref(null)
 const queryUserCountUpdateHistoryEntriesError = ref(null) as Ref<String | null>
-const queryUserCountUpdateHistoryEntriesResultLastUpdatedAt = ref("")
 
 
 const shownUserCountUpdateHistoryEntries: Ref<UserCountUpdateHistoryEntry[]> = ref([])
@@ -133,7 +124,6 @@ const pageSize = ref(10)
 function resetState(): void {
   userCountUpdateHistoryEntries.value = null
   queryUserCountUpdateHistoryEntriesError.value = null
-  queryUserCountUpdateHistoryEntriesResultLastUpdatedAt.value = ""
 
   shownUserCountUpdateHistoryEntries.value = []
   shownUserCountUpdateHistoryEntriesTotalCount.value = 0
@@ -141,6 +131,11 @@ function resetState(): void {
   pageSize.value = 10
 }
 useConnectedWalletEventListener().onWalletDisconnected(resetState)
+async function refreshInitPage() {
+  page.value = 1
+  pageSize.value = 10
+  await fetch(page.value, pageSize.value)
+}
 function fetchData({ currentPage, currentPageSize }: { currentPage: number, currentPageSize: number }) {
   if (!connectedWalletStore.isWalletConnected) { return }
 
@@ -169,14 +164,12 @@ async function fetch(page: number, pageSize: number) {
       shownUserCountUpdateHistoryEntries.value = []
       shownUserCountUpdateHistoryEntriesTotalCount.value = Number.POSITIVE_INFINITY
       queryUserCountUpdateHistoryEntriesError.value = queryResult
-      queryUserCountUpdateHistoryEntriesResultLastUpdatedAt.value = Date.now().toString()
       return
     }
 
     userCountUpdateHistoryEntries.value = queryResult.user_count_update_history_entries.entries
     shownUserCountUpdateHistoryEntriesTotalCount.value = queryResult.user_count_update_history_entries.total_count
     queryUserCountUpdateHistoryEntriesError.value = null
-    queryUserCountUpdateHistoryEntriesResultLastUpdatedAt.value = Date.now().toString()
   })
 }
 
@@ -193,22 +186,6 @@ const {
   pageSize,
   onPageChange: fetchData,
   onPageSizeChange: fetchData,
-})
-const queryUserCountUpdateHistoryEntriesResultItems: ComputedRef<Array<any>> = computed(() => {
-  return [
-    {
-      label: "Result",
-      slot: "result",
-      defaultOpen: userCountUpdateHistoryEntries.value !== null,
-      disabled: userCountUpdateHistoryEntries.value === null,
-    },
-    {
-      label: "Error",
-      content: queryUserCountUpdateHistoryEntriesError.value ? queryUserCountUpdateHistoryEntriesError.value : "",
-      defaultOpen: queryUserCountUpdateHistoryEntriesError.value !== null,
-      disabled: queryUserCountUpdateHistoryEntriesError.value === null,
-    },
-  ]
 })
 
 </script>
