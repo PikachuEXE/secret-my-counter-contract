@@ -55,6 +55,8 @@ pub struct BookmarkedNumberEntryInResponse {
     pub number: i32,
     pub memo_text: String,
 
+    pub marked_as_public_at_in_ms: Option<u64>,
+
     // Using milliseconds since JS `Date` uses it
     pub created_at_in_ms: u64,
     pub updated_at_in_ms: u64,

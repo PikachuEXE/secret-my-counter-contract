@@ -9,6 +9,12 @@ pub fn query_entries(deps: Deps, page_one_based: u32, page_size: u32, reverse_or
         owner_addr: t.1.owner_addr.clone(),
         number: t.1.number,
         memo_text: t.1.memo_text.clone(),
+        marked_as_public_at_in_ms: if t.1.marked_as_public_at.is_some() {
+            Some(t.1.marked_as_public_at.unwrap().nanos() / 1_000_000)
+        }
+        else {
+            None
+        },
         created_at_in_ms: t.1.created_at.nanos() / 1_000_000,
         updated_at_in_ms: t.1.updated_at.nanos() / 1_000_000,
     }}).collect();
@@ -72,6 +78,8 @@ mod tests {
                     number: 1,
                     memo_text: memo_text.clone(),
 
+                    marked_as_public_at_in_ms: None,
+
                     created_at_in_ms: Default::default(),
                     updated_at_in_ms: Default::default(),
                 },
@@ -81,6 +89,8 @@ mod tests {
                     owner_addr: Addr::unchecked(user_addr_2),
                     number: 1,
                     memo_text: memo_text.clone(),
+
+                    marked_as_public_at_in_ms: None,
 
                     created_at_in_ms: Default::default(),
                     updated_at_in_ms: Default::default(),
@@ -97,6 +107,8 @@ mod tests {
                     number: 1,
                     memo_text: memo_text.clone(),
 
+                    marked_as_public_at_in_ms: None,
+
                     created_at_in_ms: Default::default(),
                     updated_at_in_ms: Default::default(),
                 },
@@ -106,6 +118,8 @@ mod tests {
                     owner_addr: Addr::unchecked(user_addr_1),
                     number: 1,
                     memo_text: memo_text.clone(),
+
+                    marked_as_public_at_in_ms: None,
 
                     created_at_in_ms: Default::default(),
                     updated_at_in_ms: Default::default(),

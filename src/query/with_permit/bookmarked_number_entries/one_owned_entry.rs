@@ -16,6 +16,12 @@ pub fn query(deps: Deps, viewer: String, entry_id: String, suffix_4_test: Option
             owner_addr: entry.owner_addr,
             number: entry.number,
             memo_text: entry.memo_text,
+            marked_as_public_at_in_ms: if entry.marked_as_public_at.is_some() {
+                Some(entry.marked_as_public_at.unwrap().nanos() / 1_000_000)
+            }
+            else {
+                None
+            },
             created_at_in_ms: entry.created_at.nanos() / 1_000_000,
             updated_at_in_ms: entry.updated_at.nanos() / 1_000_000,
         },
@@ -75,6 +81,8 @@ mod tests {
                     owner_addr: entry.owner_addr.clone(),
                     number: entry.number,
                     memo_text: entry.memo_text.clone(),
+
+                    marked_as_public_at_in_ms: None,
 
                     created_at_in_ms: Default::default(),
                     updated_at_in_ms: Default::default(),
