@@ -84,6 +84,8 @@ import {
 } from "secretjs"
 import type { Ref } from "@vue/reactivity"
 
+const route = useRoute()
+
 const connectedWalletEventListener = useConnectedWalletEventListener()
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
 const { secretNetworkClient } = storeToRefs(connectedWalletAndClientStore)
@@ -92,7 +94,8 @@ const secretClientProxy = useSecretClientProxy()
 
 const transactionStatusStore = useTransactionStatusStore()
 
-const number = ref(1)
+const numberFromQuery = typeof route.query.number === "string" && parseInt(route.query.number) || NaN
+const number = ref(isNaN(numberFromQuery) ? 1 : numberFromQuery)
 const memo = ref('')
 const makeNewDataEntryPublic = ref(false)
 const lastTxResponse: Ref<null | TxResponse> = ref(null)

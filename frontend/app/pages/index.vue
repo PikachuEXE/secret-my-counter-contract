@@ -11,12 +11,31 @@
             :disabled="!secretNetworkClient"
             @click="queryCount"
           />
-          <template v-if="secretNetworkClient">
+          <template
+            v-if="count != null || queryGlobalStatsError"
+          >
             <UDivider />
-            <UAccordion
-              :key="queryResultLastUpdatedAt"
-              :items="queryResultItems"
-            />
+            <template v-if="count != null">
+              <p >
+                Count: {{ count }}
+              </p>
+              <div>
+                <UButton
+                  label="Bookmark This Number"
+                  icon="i-carbon-bookmark-add"
+                  :to="`/bookmarks/new?number=${count}`"
+                />
+              </div>
+            </template>
+            <UAlert
+              v-else-if="queryGlobalStatsError"
+              icon="i-carbon-warning"
+              title="Oops"
+            >
+              <template #description>
+                Fail: {{ queryGlobalStatsError }}
+              </template>
+            </UAlert>
           </template>
         </div>
       </UCard>
@@ -192,45 +211,30 @@ const funcTabsItems = computed(() => {
 
 const count = ref(null) as Ref<number | null>
 const queryCountError = ref(null) as Ref<String | null>
-const queryResultLastUpdatedAt = ref("")
 connectedWalletEventListener.onWalletDisconnected(() => {
   count.value = null
   queryCountError.value = null
-  queryResultLastUpdatedAt.value = ""
 })
 connectedWalletEventListener.onWalletConnected(queryCount)
 async function queryCount() {
-  const queryResult = await secretClientProxy.queryContract({
-    get_count: {},
-  }) as {count: number} | string
-  if (typeof queryResult === "string") {
-    count.value = null
-    queryCountError.value = queryResult
-    queryResultLastUpdatedAt.value = Date.now().toString()
-    return
+  try {
+    const queryResult = await secretClientProxy.queryContract({
+      get_count: {},
+    }) as {count: number} | string
+    if (typeof queryResult === "string") {
+      count.value = null
+      queryCountError.value = queryResult
+      return
+    }
+
+    count.value = queryResult.count
+    queryCountError.value = null
   }
-
-  count.value = queryResult.count
-  queryCountError.value = null
-  queryResultLastUpdatedAt.value = Date.now().toString()
+  catch (ex) {
+    console.error(ex)
+    queryCountError.value = ex.message
+  }
 }
-
-const queryResultItems: ComputedRef<Array<any>> = computed(() => {
-  return [
-    {
-      label: "Result",
-      content: count.value != null ? count.value : "",
-      defaultOpen: count.value !== null,
-      disabled: count.value === null,
-    },
-    {
-      label: "Error",
-      content: queryCountError.value ? queryCountError.value : "",
-      defaultOpen: queryCountError.value !== null,
-      disabled: queryCountError.value === null,
-    },
-  ]
-})
 
 
 const countIncreaseAmount = ref(1)
