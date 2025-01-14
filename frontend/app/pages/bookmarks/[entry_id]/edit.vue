@@ -97,7 +97,7 @@ const queryEntryInProgress = computed(() => {
 
   return true
 })
-connectedWalletEventListener.onWalletConnected(async () => {
+const fetchEntry = async () => {
   await permits.getOwnerPermit(async (permit) => {
     const queryResult = await secretClientProxy.queryContract({
       with_permit: {
@@ -123,7 +123,9 @@ connectedWalletEventListener.onWalletConnected(async () => {
     memo.value = queryResult.one_bookmarked_number_entry.entry.memo_text
     queryEntryError.value = null
   })
-})
+}
+connectedWalletEventListener.onWalletConnected(fetchEntry)
+connectedWalletEventListener.ifWalletConnected(fetchEntry)
 
 const memo = ref('')
 const lastTxResponse: Ref<null | TxResponse> = ref(null)

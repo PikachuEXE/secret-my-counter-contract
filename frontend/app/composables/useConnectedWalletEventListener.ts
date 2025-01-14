@@ -40,8 +40,14 @@ export const useConnectedWalletEventListener = createSharedComposable(() => {
     walletDisconnectFallbacks.push(func)
   }
 
+  function ifWalletConnected(func: callbackFunc): void {
+    if (secretNetworkClient != null) func()
+  }
+
   return {
     onWalletConnected,
     onWalletDisconnected,
+
+    ifWalletConnected,
   }
 })
