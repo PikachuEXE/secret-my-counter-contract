@@ -1,10 +1,11 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult};
 use crate::state::bookmarked_numbers::{BookmarkedNumbersManager, UpdateOneEntryPayload};
 
-pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, entry_id: String, memo_text: String, suffix_4_test: Option<&[u8]>) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, entry_id: String, memo_text: String, mark_entry_as_public: bool, suffix_4_test: Option<&[u8]>) -> StdResult<Response> {
     BookmarkedNumbersManager::update_one_entry(deps.storage, &env, &info, UpdateOneEntryPayload{
         entry_id: entry_id.clone(),
         memo_text: memo_text.clone(),
+        mark_entry_as_public,
     }, suffix_4_test)?;
 
     Ok(Response::default())
@@ -62,7 +63,7 @@ mod tests {
             );
         });
 
-        let _res = execute(deps.as_mut(), env, info.clone(), get_generated_sqid(1, env_block_time.clone())?, new_memo_text.clone(), Some(suffix_4_test))?;
+        let _res = execute(deps.as_mut(), env, info.clone(), get_generated_sqid(1, env_block_time.clone())?, new_memo_text.clone(), false, Some(suffix_4_test))?;
         assert_eq!(
             BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, creator_addr.clone(), 0, 1, true, Some(suffix_4_test))?
             .iter()
