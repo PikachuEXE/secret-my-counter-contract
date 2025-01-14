@@ -2,7 +2,7 @@
   <AppDesktopNav />
   <main>
     <UContainer class="pt-10">
-      <NuxtPage />
+      <NuxtPage :keepalive="true" />
     </UContainer>
   </main>
   <UNotificationStaticContainer v-if="transactionStatusStore.transactionInProgress">
