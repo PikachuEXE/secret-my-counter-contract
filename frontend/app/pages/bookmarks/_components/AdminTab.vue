@@ -14,7 +14,7 @@
         <p v-if="queryEntriesError != null">
           {{ queryEntriesError }}
         </p>
-        <div v-else-if="entries?.length === 0">
+        <div v-else-if="shownEntries?.length === 0">
           Empty
         </div>
         <div class="space-y-4" v-else>
@@ -47,14 +47,14 @@
           </div>
 
           <div class="entry-list">
-            <template v-for="(e, index) in entries">
+            <template v-for="(e, index) in shownEntries">
               <EntryRow
                 class="p-2"
                 :entry="e"
                 :marked-as-public-at-visible="true"
                 :owner-address-visible="true"
               />
-              <UDivider v-if="index < entries.length - 1" />
+              <UDivider v-if="index < shownEntries.length - 1" />
             </template>
           </div>
 
@@ -106,20 +106,15 @@ const secretClientProxy = useSecretClientProxy()
 const permits = usePermits()
 
 
-const entries: Ref<null | BookmarkedNumberEntry[]> = ref(null)
-const queryEntriesError = ref(null) as Ref<String | null>
-
-
-const shownEntries: Ref<BookmarkedNumberEntry[]> = ref([])
+const shownEntries: Ref<null | BookmarkedNumberEntry[]> = ref(null)
 const shownEntriesTotalCount = ref(0)
+const queryEntriesError = ref(null) as Ref<String | null>
 const page = ref(1)
 const pageSize = ref(10)
 function resetState(): void {
-  entries.value = null
-  queryEntriesError.value = null
-
-  shownEntries.value = []
+  shownEntries.value = null
   shownEntriesTotalCount.value = 0
+  queryEntriesError.value = null
   page.value = 1
   pageSize.value = 10
 }
@@ -160,7 +155,7 @@ async function fetch(page: number, pageSize: number) {
       return
     }
 
-    entries.value = queryResult.bookmarked_number_entries.entries
+    shownEntries.value = queryResult.bookmarked_number_entries.entries
     shownEntriesTotalCount.value = queryResult.bookmarked_number_entries.total_count
     queryEntriesError.value = null
   })
