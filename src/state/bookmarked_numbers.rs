@@ -38,6 +38,7 @@ pub struct UpdateOneEntryPayload {
     pub entry_id: String,
 
     pub memo_text: String,
+    pub mark_entry_as_public: bool,
 }
 
 #[derive(Default)]
@@ -62,14 +63,7 @@ impl BookmarkedNumbersManager {
         OWNER_ADDR_TO_ENTRY_INDEX_STORE.add_suffix(owner_addr.as_bytes()).insert(storage, &next_sqid.clone())?;
         owner_addr_to_number_index_store.insert(storage, &entry.number)?;
         if entry.marked_as_public_at.is_some() {
-            let index_store = if let Some(suffix) = suffix_4_test {
-                &(GLOBAL_PUBLIC_ENTRY_INDEX_STORE.add_suffix(suffix))
-            } else {
-                &GLOBAL_PUBLIC_ENTRY_INDEX_STORE
-            };
-            index_store.insert(storage, &next_sqid.clone())?;
-
-            NUMBER_TO_GLOBAL_PUBLIC_ENTRY_INDEX_STORE.add_suffix(entry.number.to_string().as_bytes()).insert(storage, &next_sqid.clone())?;
+            add_entry_id_to_public_entry_indexes(storage, entry.number, &next_sqid, suffix_4_test)?;
         }
 
         Ok(())
@@ -93,6 +87,27 @@ impl BookmarkedNumbersManager {
         }
 
         let mut entry = entry_store.get(storage, &payload.entry_id).unwrap();
+        // region marked_as_public
+
+        // region private to public
+
+        if entry.marked_as_public_at.is_none() && payload.mark_entry_as_public {
+            entry.marked_as_public_at = Some(env.block.time.clone());
+            add_entry_id_to_public_entry_indexes(storage, entry.number, &payload.entry_id, suffix_4_test)?;
+        }
+
+        // endregion private to public
+
+        // region public to private
+
+        if entry.marked_as_public_at.is_some() && !payload.mark_entry_as_public {
+            return Err(StdError::generic_err("Updating a public entry to be private is currently unsupported"));
+        }
+
+        // endregion public to private
+
+        // endregion marked_as_public
+
         entry.memo_text = payload.memo_text;
         // Always update this
         entry.updated_at = env.block.time;
@@ -225,6 +240,19 @@ impl BookmarkedNumbersManager {
     }
 }
 
+fn add_entry_id_to_public_entry_indexes(storage: &mut dyn Storage, entry_number: i32, entry_id: &String, suffix_4_test: Option<&[u8]>) -> StdResult<()> {
+    let index_store = if let Some(suffix) = suffix_4_test {
+        &(GLOBAL_PUBLIC_ENTRY_INDEX_STORE.add_suffix(suffix))
+    } else {
+        &GLOBAL_PUBLIC_ENTRY_INDEX_STORE
+    };
+    index_store.insert(storage, &entry_id.clone())?;
+
+    NUMBER_TO_GLOBAL_PUBLIC_ENTRY_INDEX_STORE.add_suffix(entry_number.to_string().as_bytes()).insert(storage, &entry_id.clone())?;
+
+    Ok(())
+}
+
 fn get_next_generated_sqid(storage: &mut dyn Storage, env: &Env) -> StdResult<String> {
     let next_id_u64 = get_next_id_u64_and_advance_sequence(storage)?;
     let block_time = env.block.time.clone();
@@ -338,6 +366,7 @@ mod tests {
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
                 entry_id: get_generated_sqid(999, env.block.time.clone())?,
                 memo_text: "".to_string(),
+                mark_entry_as_public: false,
             }, Some(suffix_4_test)),
             Err(StdError::generic_err("Entry not found")),
         );
@@ -353,6 +382,7 @@ mod tests {
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
                 entry_id: get_generated_sqid(1, env.block.time.clone())?,
                 memo_text: "".to_string(),
+                mark_entry_as_public: false,
             }, Some(suffix_4_test)),
             Err(StdError::generic_err("Unauthorized")),
         );
@@ -369,6 +399,7 @@ mod tests {
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
                 entry_id: get_generated_sqid(1, env.block.time.clone())?,
                 memo_text: new_memo_text.clone(),
+                mark_entry_as_public: false,
             }, Some(suffix_4_test)),
             Ok(()),
         );
@@ -388,6 +419,82 @@ mod tests {
                     updated_at: env_block_time.clone(),
                 },
             ],
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_one_entry_for_public_to_private_n_reverse() -> StdResult<()> {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let env_block_time = env.block.time.clone();
+        let suffix_4_test_str = nanoid!();
+        let suffix_4_test = suffix_4_test_str.as_bytes();
+        let store = ENTRY_STORE.add_suffix(suffix_4_test);
+        let owner_addr1_str = "owner_addr1";
+        let owner_addr1 = Addr::unchecked(owner_addr1_str);
+
+        // is_empty
+        assert_eq!(store.is_empty(deps.as_ref().storage), Ok(true));
+        let entries: Vec<BookmarkedNumberEntry> = vec![
+            BookmarkedNumberEntry{
+                owner_addr: owner_addr1.clone(),
+                number: 1,
+                memo_text: "".to_string(),
+                marked_as_public_at: None,
+
+                created_at: Default::default(),
+                updated_at: Default::default(),
+            },
+        ];
+        entries.iter().for_each(|entry| {
+            assert_eq!(
+                BookmarkedNumbersManager::add_one_entry(deps.as_mut().storage, &env, entry.clone(), Some(suffix_4_test)),
+                Ok(()),
+            );
+        });
+
+        // Success
+        let info = mock_info(
+            owner_addr1_str,
+            &[Coin {
+                denom: "token".to_string(),
+                amount: Uint128::new(2),
+            }],
+        );
+        assert_eq!(
+            BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
+                entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                memo_text: "".to_string(),
+                mark_entry_as_public: true,
+            }, Some(suffix_4_test)),
+            Ok(()),
+        );
+        assert_eq!(
+            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 0, 1, false, Some(suffix_4_test))?
+            .iter()
+            .map(|t| t.1.clone())
+            .collect::<Vec<_>>(),
+            vec![
+                BookmarkedNumberEntry{
+                    owner_addr: owner_addr1.clone(),
+                    number: 1,
+                    memo_text: "".to_string(),
+                    marked_as_public_at: Some(env_block_time.clone()),
+
+                    created_at: Default::default(),
+                    updated_at: env_block_time.clone(),
+                },
+            ],
+        );
+        assert_eq!(
+            BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
+                entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                memo_text: "".to_string(),
+                mark_entry_as_public: false,
+            }, Some(suffix_4_test)),
+            Err(StdError::generic_err("Updating a public entry to be private is currently unsupported")),
         );
 
         Ok(())

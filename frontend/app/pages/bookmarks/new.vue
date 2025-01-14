@@ -39,7 +39,7 @@
         />
         <UCheckbox
           label="Make It Public"
-          v-model="makeNewDataEntryPublic"
+          v-model="makeDataEntryPublic"
           class="flex-grow-0"
           :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
         />
@@ -47,7 +47,7 @@
       <div class="flex items-center justify-center space-x-2">
         <UButton
          color="black"
-         :label="`Bookmark Number (${number})${makeNewDataEntryPublic ? ' (Public)' : ''}`"
+         :label="`Bookmark Number (${number})${makeDataEntryPublic ? ' (Public)' : ''}`"
          icon="i-carbon-bookmark-add"
          class="flex-grow-1 justify-center"
          :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
@@ -61,17 +61,21 @@
      v-if="!transactionStatusStore.transactionInProgress && lastTxResponse"
     >
       <UAlert
-       icon="i-carbon-checkmark"
-       title="Done!"
-       :close-button="{ icon: 'i-heroicons-x-mark-20-solid', color: 'gray', variant: 'link', padded: false }"
+        v-if="lastTxResponse.code === 0"
+        icon="i-carbon-checkmark"
+        title="Done!"
       >
         <template #description>
-          <span v-if="lastTxResponse.code === 0">
-            Success: {{ lastTxResponse.timestamp }}
-          </span>
-          <span v-else>
-            Fail: rawLog={{ lastTxResponse.rawLog }}
-          </span>
+          Success: {{ lastTxResponse.timestamp }}
+        </template>
+      </UAlert>
+      <UAlert
+        v-else
+        icon="i-carbon-warning"
+        title="Oops"
+      >
+        <template #description>
+          Fail: rawLog={{ lastTxResponse.rawLog }}
         </template>
       </UAlert>
     </template>
@@ -97,7 +101,7 @@ const transactionStatusStore = useTransactionStatusStore()
 const numberFromQuery = typeof route.query.number === "string" && parseInt(route.query.number) || NaN
 const number = ref(isNaN(numberFromQuery) ? 1 : numberFromQuery)
 const memo = ref('')
-const makeNewDataEntryPublic = ref(false)
+const makeDataEntryPublic = ref(false)
 const lastTxResponse: Ref<null | TxResponse> = ref(null)
 connectedWalletEventListener.onWalletDisconnected(() => {
   lastTxResponse.value = null
@@ -108,7 +112,7 @@ async function broadcastExecuteMsg() {
       add_bookmark_number: {
         number: number.value,
         memo_text: memo.value,
-        mark_entry_as_public: makeNewDataEntryPublic.value
+        mark_entry_as_public: makeDataEntryPublic.value
       },
     },
     onSuccess: (res) => { lastTxResponse.value = res }

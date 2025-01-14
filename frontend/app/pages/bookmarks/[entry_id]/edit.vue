@@ -35,6 +35,11 @@
           placeholder="Memo..."
           v-model="memo"
         />
+        <UCheckbox
+          label="Make It Public"
+          v-model="makeDataEntryPublic"
+          class="flex-grow-0"
+        />
       </div>
       <div class="flex items-center justify-center space-x-2">
         <UButton
@@ -56,17 +61,21 @@
       v-if="!transactionStatusStore.transactionInProgress && lastTxResponse"
     >
       <UAlert
+        v-if="lastTxResponse.code === 0"
         icon="i-carbon-checkmark"
         title="Done!"
-        :close-button="{ icon: 'i-heroicons-x-mark-20-solid', color: 'gray', variant: 'link', padded: false }"
       >
         <template #description>
-          <span v-if="lastTxResponse.code === 0">
-            Success: {{ lastTxResponse.timestamp }}
-          </span>
-          <span v-else>
-            Fail: rawLog={{ lastTxResponse.rawLog }}
-          </span>
+          Success: {{ lastTxResponse.timestamp }}
+        </template>
+      </UAlert>
+      <UAlert
+        v-else
+        icon="i-carbon-warning"
+        title="Oops"
+      >
+        <template #description>
+          Fail: rawLog={{ lastTxResponse.rawLog }}
         </template>
       </UAlert>
     </template>
@@ -121,6 +130,7 @@ const fetchEntry = async () => {
 
     remoteEntry.value = queryResult.one_bookmarked_number_entry.entry
     memo.value = queryResult.one_bookmarked_number_entry.entry.memo_text
+    makeDataEntryPublic.value = queryResult.one_bookmarked_number_entry.entry.marked_as_public_at_in_ms != null
     queryEntryError.value = null
   })
 }
@@ -128,6 +138,7 @@ connectedWalletEventListener.onWalletConnected(fetchEntry)
 connectedWalletEventListener.ifWalletConnected(fetchEntry)
 
 const memo = ref('')
+const makeDataEntryPublic = ref(false)
 const lastTxResponse: Ref<null | TxResponse> = ref(null)
 connectedWalletEventListener.onWalletDisconnected(() => {
   lastTxResponse.value = null
@@ -138,6 +149,7 @@ async function broadcastExecuteMsg() {
       update_bookmarked_number: {
         entry_id: route.params.entry_id,
         memo_text: memo.value,
+        mark_entry_as_public: makeDataEntryPublic.value,
       },
     },
     onSuccess: (res) => { lastTxResponse.value = res }
