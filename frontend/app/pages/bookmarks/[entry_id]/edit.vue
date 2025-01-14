@@ -158,8 +158,7 @@ const fetchEntry = async () => {
     queryEntryError.value = null
   })
 }
-connectedWalletEventListener.onWalletConnected(fetchEntry)
-connectedWalletEventListener.ifWalletConnected(fetchEntry)
+connectedWalletEventListener.ifWalletConnectedAndOnConnected(fetchEntry)
 
 const memo = ref('')
 const remoteDataEntryIsPublic = computed(() => {
