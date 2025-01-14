@@ -215,7 +215,7 @@ connectedWalletEventListener.onWalletDisconnected(() => {
   count.value = null
   queryCountError.value = null
 })
-connectedWalletEventListener.onWalletConnected(queryCount)
+connectedWalletEventListener.ifWalletConnectedAndOnConnected(queryCount)
 async function queryCount() {
   try {
     const queryResult = await secretClientProxy.queryContract({
