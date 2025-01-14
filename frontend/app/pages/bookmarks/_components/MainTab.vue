@@ -67,6 +67,7 @@
                     class="p-2"
                     :entry="e"
                     :owner-address-visible="false"
+                    :marked-as-public-at-visible="true"
                     :edit-button-visible="true"
                   />
                   <UDivider v-if="index < shownEntries.length - 1" />

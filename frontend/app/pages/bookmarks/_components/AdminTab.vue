@@ -56,6 +56,7 @@
                   <EntryRow
                     class="p-2"
                     :entry="e"
+                    :marked-as-public-at-visible="true"
                     :owner-address-visible="true"
                   />
                   <UDivider v-if="index < entries.length - 1" />
