@@ -37,12 +37,23 @@
           placeholder="Memo..."
           v-model="memo"
         />
-        <UCheckbox
-          label="Make It Public"
-          v-model="makeDataEntryPublic"
-          class="flex-grow-0"
-          :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
-        />
+        <div class="space-y-2">
+          <UCheckbox
+            label="Make It Public"
+            v-model="makeDataEntryPublic"
+            class="flex-grow-0"
+            :disabled="!secretNetworkClient || transactionStatusStore.transactionInProgress"
+          />
+          <UAlert
+            v-if="makeDataEntryPublic"
+            icon="i-carbon-warning-alt"
+            title="Warning"
+          >
+            <template #description>
+              Warning: Currently public entries cannot be updated to be private
+            </template>
+          </UAlert>
+        </div>
       </div>
       <div class="flex items-center justify-center space-x-2">
         <UButton

@@ -35,11 +35,35 @@
           placeholder="Memo..."
           v-model="memo"
         />
-        <UCheckbox
-          label="Make It Public"
-          v-model="makeDataEntryPublic"
-          class="flex-grow-0"
-        />
+        <div class="space-y-2">
+          <UCheckbox
+            v-model="makeDataEntryPublic"
+            class="flex-grow-0"
+            :disabled="remoteDataEntryIsPublic"
+          >
+            <template #label>
+              Make It Public
+              <UTooltip
+                v-if="remoteDataEntryIsPublic"
+                :ui="{width: 'max-w-xl'}"
+              >
+                <template #text>
+                  Currently public entries cannot be updated to be private
+                </template>
+                <UIcon name="i-heroicons-question-mark-circle" />
+              </UTooltip>
+            </template>
+          </UCheckbox>
+          <UAlert
+            v-if="!remoteDataEntryIsPublic && makeDataEntryPublic"
+            icon="i-carbon-warning-alt"
+            title="Warning"
+          >
+            <template #description>
+              Warning: Currently public entries cannot be updated to be private
+            </template>
+          </UAlert>
+        </div>
       </div>
       <div class="flex items-center justify-center space-x-2">
         <UButton
@@ -138,6 +162,9 @@ connectedWalletEventListener.onWalletConnected(fetchEntry)
 connectedWalletEventListener.ifWalletConnected(fetchEntry)
 
 const memo = ref('')
+const remoteDataEntryIsPublic = computed(() => {
+  return remoteEntry.value != null ? remoteEntry.value.marked_as_public_at_in_ms != null : false
+})
 const makeDataEntryPublic = ref(false)
 const lastTxResponse: Ref<null | TxResponse> = ref(null)
 connectedWalletEventListener.onWalletDisconnected(() => {
