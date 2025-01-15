@@ -50,7 +50,7 @@
             title="Warning"
           >
             <template #description>
-              Warning: Currently public entries cannot be updated to be private
+              Currently public entries cannot be updated to be private except the last public entry to prevent expensive index rewrite
             </template>
           </UAlert>
         </div>
