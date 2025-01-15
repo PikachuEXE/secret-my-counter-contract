@@ -425,7 +425,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_one_entry_for_public_to_private_n_reverse() -> StdResult<()> {
+    fn test_update_one_entry_for_public_to_private_n_reverse_n_get_public_entries() -> StdResult<()> {
         let mut deps = mock_dependencies();
         let env = mock_env();
         let env_block_time = env.block.time.clone();
@@ -443,6 +443,24 @@ mod tests {
                 number: 1,
                 memo_text: "".to_string(),
                 marked_as_public_at: None,
+
+                created_at: Default::default(),
+                updated_at: Default::default(),
+            },
+            BookmarkedNumberEntry{
+                owner_addr: owner_addr1.clone(),
+                number: 2,
+                memo_text: "".to_string(),
+                marked_as_public_at: Some(Timestamp::from_nanos(0)),
+
+                created_at: Default::default(),
+                updated_at: Default::default(),
+            },
+            BookmarkedNumberEntry{
+                owner_addr: owner_addr1.clone(),
+                number: 3,
+                memo_text: "".to_string(),
+                marked_as_public_at: Some(Timestamp::from_nanos(0)),
 
                 created_at: Default::default(),
                 updated_at: Default::default(),
@@ -472,11 +490,29 @@ mod tests {
             Ok(()),
         );
         assert_eq!(
-            BookmarkedNumbersManager::get_global_entries(deps.as_ref().storage, 0, 1, false, Some(suffix_4_test))?
+            BookmarkedNumbersManager::get_public_entries(deps.as_ref().storage, 0, 3, false, Some(suffix_4_test))?
             .iter()
             .map(|t| t.1.clone())
             .collect::<Vec<_>>(),
             vec![
+                BookmarkedNumberEntry{
+                    owner_addr: owner_addr1.clone(),
+                    number: 2,
+                    memo_text: "".to_string(),
+                    marked_as_public_at: Some(Timestamp::from_nanos(0)),
+
+                    created_at: Default::default(),
+                    updated_at: Default::default(),
+                },
+                BookmarkedNumberEntry{
+                    owner_addr: owner_addr1.clone(),
+                    number: 3,
+                    memo_text: "".to_string(),
+                    marked_as_public_at: Some(Timestamp::from_nanos(0)),
+
+                    created_at: Default::default(),
+                    updated_at: Default::default(),
+                },
                 BookmarkedNumberEntry{
                     owner_addr: owner_addr1.clone(),
                     number: 1,
