@@ -177,7 +177,7 @@ impl BookmarkedNumbersManager {
         };
         Ok(items?.iter().
             map(|id| (id.clone(), entry_store.get(storage, id).unwrap())).
-            collect::<Vec<(String, BookmarkedNumberEntry)>>())
+            collect::<_>())
     }
     pub fn get_owned_entries_total_count(storage: &dyn Storage, owner_addr: Addr) -> StdResult<u32> {
         let owner_addr_index = OWNER_ADDR_TO_ENTRY_INDEX_STORE.add_suffix(owner_addr.as_bytes());
@@ -205,7 +205,7 @@ impl BookmarkedNumbersManager {
         };
         Ok(items?.iter().
             map(|id| (id.clone(), entry_store.get(storage, id).unwrap())).
-            collect::<Vec<(String, BookmarkedNumberEntry)>>())
+            collect::<_>())
     }
     pub fn get_public_entries_total_count(storage: &dyn Storage, suffix_4_test: Option<&[u8]>) -> StdResult<u32> {
         let index_store = if let Some(suffix) = suffix_4_test {
@@ -233,7 +233,7 @@ impl BookmarkedNumbersManager {
         };
         Ok(items?.iter().
             map(|id| (id.clone(), entry_store.get(storage, id).unwrap())).
-            collect::<Vec<(String, BookmarkedNumberEntry)>>())
+            collect::<_>())
     }
     pub fn get_public_entries_by_number_total_count(storage: &dyn Storage, number: i32, _suffix_4_test: Option<&[u8]>) -> StdResult<u32> {
         NUMBER_TO_GLOBAL_PUBLIC_ENTRY_INDEX_STORE.add_suffix(number.to_string().as_bytes()).get_len(storage)
