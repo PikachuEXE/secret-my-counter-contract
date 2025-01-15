@@ -39,28 +39,18 @@
           <UCheckbox
             v-model="makeDataEntryPublic"
             class="flex-grow-0"
-            :disabled="remoteDataEntryIsPublic"
           >
             <template #label>
               Make It Public
-              <UTooltip
-                v-if="remoteDataEntryIsPublic"
-                :ui="{width: 'max-w-xl'}"
-              >
-                <template #text>
-                  Currently public entries cannot be updated to be private
-                </template>
-                <UIcon name="i-heroicons-question-mark-circle" />
-              </UTooltip>
             </template>
           </UCheckbox>
           <UAlert
-            v-if="!remoteDataEntryIsPublic && makeDataEntryPublic"
+            v-if="(remoteDataEntryIsPublic && !makeDataEntryPublic) || (!remoteDataEntryIsPublic && makeDataEntryPublic)"
             icon="i-carbon-warning-alt"
             title="Warning"
           >
             <template #description>
-              Warning: Currently public entries cannot be updated to be private
+              Currently public entries cannot be updated to be private except the last public entry to prevent expensive index rewrite
             </template>
           </UAlert>
         </div>
@@ -178,7 +168,12 @@ async function broadcastExecuteMsg() {
         mark_entry_as_public: makeDataEntryPublic.value,
       },
     },
-    onSuccess: (res) => { lastTxResponse.value = res }
+    onSuccess: async (res) => {
+      lastTxResponse.value = res
+      if (res.code === 0) {
+        await fetchEntry()
+      }
+    }
   })
 }
 </script>
