@@ -1,6 +1,8 @@
 [package]
 name = "secret_my_counter_contract"
 version = "0.1.0"
+description = "Secret Contract - Counter Example"
+repository = "https://github.com/PikachuEXE/secret-my-counter-contract"
 authors = ["PikachuEXE"]
 edition = "2021"
 
