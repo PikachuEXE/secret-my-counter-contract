@@ -1,11 +1,11 @@
-use cosmwasm_std::{StdError, StdResult, Storage, Timestamp};
+use cosmwasm_std::{Env, StdError, StdResult, Storage};
 use serde::{Serialize};
 
 use secret_toolkit::storage::{Keyset, Keymap};
 use secret_toolkit::serialization::{Serde};
 use secret_toolkit::storage::iter_options::{WithIter};
 use serde::de::DeserializeOwned;
-use sqids::Sqids;
+use ulid::Ulid;
 
 /// `paging` method only present for ascend order
 pub fn keyset_reverse_paging<'a, K, Ser>(keyset: &Keyset<'a, K, Ser, WithIter>, storage: &dyn Storage, start_page: u32, size: u32) -> StdResult<Vec<K>>
@@ -56,7 +56,8 @@ where
         .collect()
 }
 
-pub fn get_generated_sqid(id_u64: u64, block_time: Timestamp) -> StdResult<String> {
-    let sqids = Sqids::default();
-    Ok(sqids.encode(&[id_u64, block_time.nanos()]).unwrap())
+pub fn get_generated_ulid(id_u64: u64, env: &Env) -> StdResult<String> {
+    let random_u128 = u128::from_le_bytes(env.block.random.clone().unwrap().as_slice()[..16].try_into().unwrap());
+    let ulid = Ulid::from_parts(env.block.time.nanos() / 1_000_000, random_u128 + id_u64 as u128);
+    Ok(ulid.to_string())
 }

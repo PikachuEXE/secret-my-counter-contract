@@ -18,7 +18,7 @@ mod tests {
     use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
     use nanoid::nanoid;
     use crate::msg::{InstantiateMsg};
-    use crate::state::utils::{get_generated_sqid};
+    use crate::state::utils::{get_generated_ulid};
     use crate::state::bookmarked_numbers::{BookmarkedNumberEntry};
 
     #[test]
@@ -63,7 +63,7 @@ mod tests {
             );
         });
 
-        let _res = execute(deps.as_mut(), env, info.clone(), get_generated_sqid(1, env_block_time.clone())?, new_memo_text.clone(), false, Some(suffix_4_test))?;
+        let _res = execute(deps.as_mut(), env.clone(), info.clone(), get_generated_ulid(1, &env)?, new_memo_text.clone(), false, Some(suffix_4_test))?;
         assert_eq!(
             BookmarkedNumbersManager::get_owned_entries(deps.as_ref().storage, creator_addr.clone(), 0, 1, true, Some(suffix_4_test))?
             .iter()

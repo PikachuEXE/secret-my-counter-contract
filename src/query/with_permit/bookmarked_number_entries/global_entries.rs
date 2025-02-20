@@ -31,7 +31,7 @@ mod tests {
     use cosmwasm_std::testing::*;
     use cosmwasm_std::{Addr};
     use crate::state::bookmarked_numbers::{BookmarkedNumberEntry};
-    use crate::state::utils::{get_generated_sqid};
+    use crate::state::utils::{get_generated_ulid};
     use nanoid::nanoid;
 
     #[test]
@@ -72,7 +72,7 @@ mod tests {
         assert_eq!(query_entries(deps.as_ref(), 1, 2, false, Some(suffix_4_test))?, QueryAnswer::BookmarkedNumberEntries {
             entries: vec![
                 BookmarkedNumberEntryInResponse{
-                    entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                    entry_id: get_generated_ulid(1, &env)?,
 
                     owner_addr: Addr::unchecked(user_addr_1),
                     number: 1,
@@ -84,7 +84,7 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
-                    entry_id: get_generated_sqid(2, env.block.time.clone())?,
+                    entry_id: get_generated_ulid(2, &env)?,
 
                     owner_addr: Addr::unchecked(user_addr_2),
                     number: 1,
@@ -101,7 +101,7 @@ mod tests {
         assert_eq!(query_entries(deps.as_ref(), 1, 2, true, Some(suffix_4_test))?, QueryAnswer::BookmarkedNumberEntries {
             entries: vec![
                 BookmarkedNumberEntryInResponse{
-                    entry_id: get_generated_sqid(2, env.block.time.clone())?,
+                    entry_id: get_generated_ulid(2, &env)?,
 
                     owner_addr: Addr::unchecked(user_addr_2),
                     number: 1,
@@ -113,7 +113,7 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
-                    entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                    entry_id: get_generated_ulid(1, &env)?,
 
                     owner_addr: Addr::unchecked(user_addr_1),
                     number: 1,

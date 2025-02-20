@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use secret_toolkit::storage::{Item, Keymap, Keyset};
 use secret_toolkit::serialization::{Json};
 
-use crate::state::utils::{keyset_reverse_paging, keymap_reverse_paging, get_generated_sqid};
+use crate::state::utils::{keyset_reverse_paging, keymap_reverse_paging, get_generated_ulid};
 
 static ENTRY_STORE: Keymap<String, BookmarkedNumberEntry, Json> = Keymap::new(b"bookmarked_numbers__entry");
 // User address => Entry ID set
@@ -45,7 +45,7 @@ pub struct UpdateOneEntryPayload {
 pub struct BookmarkedNumbersManager{}
 impl BookmarkedNumbersManager {
     pub fn add_one_entry(storage: &mut dyn Storage, env: &Env, entry: BookmarkedNumberEntry, suffix_4_test: Option<&[u8]>) -> StdResult<()> {
-        let next_sqid = get_next_generated_sqid(storage, env)?;
+        let next_sqid = get_next_generated_id(storage, env)?;
         let owner_addr = entry.owner_addr.clone();
 
         let owner_addr_to_number_index_store = OWNER_ADDR_TO_NUMBER_INDEX_STORE.add_suffix(owner_addr.as_bytes());
@@ -291,10 +291,9 @@ fn remove_entry_id_from_public_entry_indexes(storage: &mut dyn Storage, entry_nu
     Ok(())
 }
 
-fn get_next_generated_sqid(storage: &mut dyn Storage, env: &Env) -> StdResult<String> {
+fn get_next_generated_id(storage: &mut dyn Storage, env: &Env) -> StdResult<String> {
     let next_id_u64 = get_next_id_u64_and_advance_sequence(storage)?;
-    let block_time = env.block.time.clone();
-    get_generated_sqid(next_id_u64, block_time)
+    get_generated_ulid(next_id_u64, env)
 }
 
 fn get_next_id_u64_and_advance_sequence(storage: &mut dyn Storage) -> StdResult<u64> {
@@ -311,7 +310,7 @@ mod tests {
     use cosmwasm_std::{Coin, StdResult, Uint128};
     use cosmwasm_std::testing::*;
     use nanoid::nanoid;
-    use crate::state::utils::{get_generated_sqid};
+    use crate::state::utils::{get_generated_ulid};
 
     #[test]
     fn test_add_one_entry_with_duplicate_number() -> StdResult<()> {
@@ -402,7 +401,7 @@ mod tests {
         );
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(999, env.block.time.clone())?,
+                entry_id: get_generated_ulid(999, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: false,
             }, Some(suffix_4_test)),
@@ -418,7 +417,7 @@ mod tests {
         );
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                entry_id: get_generated_ulid(1, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: false,
             }, Some(suffix_4_test)),
@@ -435,7 +434,7 @@ mod tests {
         let new_memo_text = nanoid!();
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                entry_id: get_generated_ulid(1, &env)?,
                 memo_text: new_memo_text.clone(),
                 mark_entry_as_public: false,
             }, Some(suffix_4_test)),
@@ -541,7 +540,7 @@ mod tests {
         );
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info_owner_addr1, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                entry_id: get_generated_ulid(1, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: true,
             }, Some(suffix_4_test)),
@@ -556,7 +555,7 @@ mod tests {
         );
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info_owner_addr2, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(4, env.block.time.clone())?,
+                entry_id: get_generated_ulid(4, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: true,
             }, Some(suffix_4_test)),
@@ -618,7 +617,7 @@ mod tests {
         // Mark non-last global public entry as private
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info_owner_addr1, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                entry_id: get_generated_ulid(1, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: false,
             }, Some(suffix_4_test)),
@@ -627,7 +626,7 @@ mod tests {
         // Mark last entry as private - take 1
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info_owner_addr2, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(4, env.block.time.clone())?,
+                entry_id: get_generated_ulid(4, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: false,
             }, Some(suffix_4_test)),
@@ -682,7 +681,7 @@ mod tests {
         // Mark last entry as private - take 2
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info_owner_addr1, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                entry_id: get_generated_ulid(1, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: false,
             }, Some(suffix_4_test)),
@@ -728,7 +727,7 @@ mod tests {
         // Mark last entry as private - take 3
         assert_eq!(
             BookmarkedNumbersManager::update_one_entry(deps.as_mut().storage, &env, &info_owner_addr2, UpdateOneEntryPayload{
-                entry_id: get_generated_sqid(5, env.block.time.clone())?,
+                entry_id: get_generated_ulid(5, &env)?,
                 memo_text: "".to_string(),
                 mark_entry_as_public: false,
             }, Some(suffix_4_test)),
@@ -807,17 +806,17 @@ mod tests {
         });
 
         // Not found
-        let entry_id = get_generated_sqid(3, env.block.time.clone())?;
+        let entry_id = get_generated_ulid(3, &env)?;
         assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr1.clone(), entry_id, Some(suffix_4_test)), Err(StdError::generic_err("Entry not found")));
         // Unauthorized
-        let entry_id = get_generated_sqid(1, env.block.time.clone())?;
+        let entry_id = get_generated_ulid(1, &env)?;
         assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr2.clone(), entry_id, Some(suffix_4_test)), Err(StdError::generic_err("Unauthorized")));
-        let entry_id = get_generated_sqid(2, env.block.time.clone())?;
+        let entry_id = get_generated_ulid(2, &env)?;
         assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr1.clone(), entry_id, Some(suffix_4_test)), Err(StdError::generic_err("Unauthorized")));
         // Success
-        let entry_id = get_generated_sqid(1, env.block.time.clone())?;
+        let entry_id = get_generated_ulid(1, &env)?;
         assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr1.clone(), entry_id, Some(suffix_4_test))?, entries[0]);
-        let entry_id = get_generated_sqid(2, env.block.time.clone())?;
+        let entry_id = get_generated_ulid(2, &env)?;
         assert_eq!(BookmarkedNumbersManager::get_one_owned_entry(deps.as_ref().storage, owner_addr2.clone(), entry_id, Some(suffix_4_test)).is_ok(), true);
 
         Ok(())

@@ -37,7 +37,7 @@ mod tests {
     use cosmwasm_std::testing::*;
     use cosmwasm_std::{Addr, Timestamp};
     use crate::state::bookmarked_numbers::{BookmarkedNumberEntry};
-    use crate::state::utils::{get_generated_sqid};
+    use crate::state::utils::{get_generated_ulid};
     use nanoid::nanoid;
 
     #[test]
@@ -106,7 +106,7 @@ mod tests {
             QueryAnswer::BookmarkedNumberEntries {
                 entries: vec![
                     BookmarkedNumberEntryInResponse{
-                        entry_id: get_generated_sqid(1, env.block.time.clone())?,
+                        entry_id: get_generated_ulid(1, &env)?,
 
                         owner_addr: Addr::unchecked(user_addr),
                         number: 1,
@@ -118,7 +118,7 @@ mod tests {
                         updated_at_in_ms: Default::default(),
                     },
                     BookmarkedNumberEntryInResponse{
-                        entry_id: get_generated_sqid(3, env.block.time.clone())?,
+                        entry_id: get_generated_ulid(3, &env)?,
 
                         owner_addr: Addr::unchecked(user_addr),
                         number: 3,
@@ -130,7 +130,7 @@ mod tests {
                         updated_at_in_ms: Default::default(),
                     },
                     BookmarkedNumberEntryInResponse{
-                        entry_id: get_generated_sqid(4, env.block.time.clone())?,
+                        entry_id: get_generated_ulid(4, &env)?,
 
                         owner_addr: Addr::unchecked(user_addr),
                         number: 4,
@@ -148,7 +148,7 @@ mod tests {
         assert_eq!(query_entries(deps.as_ref(), 1, 3, true, Some(suffix_4_test))?, QueryAnswer::BookmarkedNumberEntries {
             entries: vec![
                 BookmarkedNumberEntryInResponse{
-                    entry_id: get_generated_sqid(5, env.block.time.clone())?,
+                    entry_id: get_generated_ulid(5, &env)?,
 
                     owner_addr: Addr::unchecked(user_addr),
                     number: 5,
@@ -160,7 +160,7 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
-                    entry_id: get_generated_sqid(4, env.block.time.clone())?,
+                    entry_id: get_generated_ulid(4, &env)?,
 
                     owner_addr: Addr::unchecked(user_addr),
                     number: 4,
@@ -172,7 +172,7 @@ mod tests {
                     updated_at_in_ms: Default::default(),
                 },
                 BookmarkedNumberEntryInResponse{
-                    entry_id: get_generated_sqid(3, env.block.time.clone())?,
+                    entry_id: get_generated_ulid(3, &env)?,
 
                     owner_addr: Addr::unchecked(user_addr),
                     number: 3,

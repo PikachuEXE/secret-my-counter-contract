@@ -34,7 +34,7 @@ mod tests {
     use cosmwasm_std::testing::*;
     use cosmwasm_std::{Addr};
     use crate::state::bookmarked_numbers::{BookmarkedNumberEntry};
-    use crate::state::utils::{get_generated_sqid};
+    use crate::state::utils::{get_generated_ulid};
     use nanoid::nanoid;
 
     #[test]
@@ -73,7 +73,7 @@ mod tests {
         });
         // actual query
         entries.iter().for_each(|entry| {
-            let entry_id = get_generated_sqid(entry.number as u64, env.block.time.clone()).unwrap();
+            let entry_id = get_generated_ulid(entry.number as u64, &env).unwrap();
             assert_eq!(query(deps.as_ref(), owner_addr_str.to_string(), entry_id.clone(), Some(suffix_4_test)).unwrap(), QueryAnswer::OneBookmarkedNumberEntry {
                 entry: BookmarkedNumberEntryInResponse{
                     entry_id: entry_id.clone(),
@@ -90,7 +90,7 @@ mod tests {
             });
         });
         // Fail query
-        let entry_id = get_generated_sqid(1, env.block.time.clone())?;
+        let entry_id = get_generated_ulid(1, &env)?;
         assert_eq!(query(deps.as_ref(), "not_user_addr".to_string(), entry_id, Some(suffix_4_test)).is_err(), true);
 
         Ok(())

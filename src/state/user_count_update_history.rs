@@ -4,9 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use secret_toolkit::storage::{Item, Keymap, Keyset};
 use secret_toolkit::serialization::{Json};
-use sqids::Sqids;
 
-use crate::state::utils::{keyset_reverse_paging, keymap_reverse_paging};
+use crate::state::utils::{keyset_reverse_paging, keymap_reverse_paging, get_generated_ulid};
 
 static USER_COUNT_UPDATE_HISTORY_ENTRY_STORE: Keymap<String, UserCountUpdateHistoryEntry, Json> = Keymap::new(b"user_count_update_history__entry");
 // User address => Entry ID array
@@ -29,7 +28,7 @@ pub struct UserCountUpdateHistoryEntry {
 pub struct UserCountUpdateHistoryManager{}
 impl UserCountUpdateHistoryManager {
     pub fn add_entry(storage: &mut dyn Storage, env: &Env, history_entry: UserCountUpdateHistoryEntry, suffix_4_test: Option<&[u8]>) -> StdResult<()> {
-        let next_sqid = get_next_generated_sqid(storage, env)?;
+        let next_sqid = get_next_generated_id(storage, env)?;
         let user_addr = history_entry.user_addr.clone();
 
         let entry_store = if let Some(suffix) = suffix_4_test {
@@ -135,11 +134,9 @@ impl UserCountUpdateHistoryManager {
     }
 }
 
-fn get_next_generated_sqid(storage: &mut dyn Storage, env: &Env) -> StdResult<String> {
+fn get_next_generated_id(storage: &mut dyn Storage, env: &Env) -> StdResult<String> {
     let next_id_u64 = get_next_id_u64_and_advance_sequence(storage)?;
-    let block_time = env.block.time.clone();
-    let sqids = Sqids::default();
-    Ok(sqids.encode(&[next_id_u64, block_time.nanos()]).unwrap())
+    get_generated_ulid(next_id_u64, env)
 }
 
 fn get_next_id_u64_and_advance_sequence(storage: &mut dyn Storage) -> StdResult<u64> {
