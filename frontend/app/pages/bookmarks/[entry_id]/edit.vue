@@ -101,7 +101,7 @@ import {
   type TxResponse,
 } from "secretjs"
 import type { Ref } from "@vue/reactivity"
-import { type BookmarkedNumberEntry } from "../types"
+import type { BookmarkedNumberEntry } from "../types.d.ts"
 
 const route = useRoute()
 

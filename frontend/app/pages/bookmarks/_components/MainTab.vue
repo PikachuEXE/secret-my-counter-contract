@@ -106,7 +106,7 @@
 <script setup lang="ts">
 import { useOffsetPagination } from "@vueuse/core"
 
-import { type BookmarkedNumberEntry } from "../types"
+import type { BookmarkedNumberEntry } from "../types.d.ts"
 import EntryRow from "~/pages/bookmarks/_components/EntryRow.vue";
 
 const connectedWalletStore = useConnectedWalletStore()

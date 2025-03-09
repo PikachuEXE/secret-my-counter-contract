@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { type BookmarkedNumberEntry } from "../types"
+import type { BookmarkedNumberEntry } from "../types.d.ts"
 
 const props = defineProps({
   entry: {

@@ -100,7 +100,7 @@
 <script setup lang="ts">
 import { useOffsetPagination } from "@vueuse/core"
 
-import { type UserCountUpdateHistoryEntry } from "../types"
+import type { UserCountUpdateHistoryEntry } from "../types.d.ts"
 
 const connectedWalletStore = useConnectedWalletStore()
 const connectedWalletAndClientStore = useConnectedWalletAndClientStore()
